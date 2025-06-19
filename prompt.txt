@@ -1,0 +1,2151 @@
+import React, { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Input } from '@/components/ui/input'
+import axios from 'axios'
+import { backendUrl } from '../App'
+import { Banners } from '@/components/setting/Banners'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+
+const Settings = ({ token }) => {
+  const [settings, setSettings] = useState({
+    currency: { name: '', sign: '' },
+    email: { notifications: '' },
+    images: { hero: [], banner: '' },
+    text: { banner: '' },
+    link: {
+      productId: '',
+      category: '',
+      subcategory: '',
+      subsubcategory: ''
+    }
+  })
+  const [heroFiles, setHeroFiles] = useState([])
+  const [bannerFile, setBannerFile] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [bannerText, setBannerText] = useState('')  
+  const [linkType, setLinkType] = useState('product');
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState({});
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedLink, setSelectedLink] = useState({
+    productId: '',
+    category: '',
+    subcategory: '',
+    subsubcategory: ''
+  });
+  const [heroText, setHeroText] = useState('')
+  const [heroLinkType, setHeroLinkType] = useState('product')
+  const [selectedHeroLink, setSelectedHeroLink] = useState({
+    productId: '',
+    category: '',
+    subcategory: '',
+    subsubcategory: ''
+  })
+
+  // Add this useEffect to handle settings initialization
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/settings`, {
+          headers: { token }
+        })
+        if (response.data.success) {
+          const settings = response.data.settings
+          setSettings(settings)
+          setBannerText(settings.text?.banner || '')
+          setHeroText(settings.text?.hero || '')
+          
+          // Initialize hero link data
+          if (settings.herolink) {
+            const newHeroLinkType = settings.herolink.productId ? 'product' : 'category'
+            setHeroLinkType(newHeroLinkType)
+            setSelectedHeroLink({
+              productId: settings.herolink.productId || '',
+              category: settings.herolink.category || '',
+              subcategory: settings.herolink.subcategory || '',
+              subsubcategory: settings.herolink.subsubcategory || ''
+            })
+          }
+        }
+      } catch (error) {
+        toast.error('Failed to fetch settings')
+      }
+    }
+
+    fetchSettings()
+  }, [])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('currency[name]', settings.currency.name)
+      formData.append('currency[sign]', settings.currency.sign)
+      formData.append('email[notifications]', settings.email.notifications)
+      
+      // Handle text updates
+      formData.append('text[banner]', bannerText)
+      formData.append('text[hero]', heroText)
+      
+      // Handle link updates
+      formData.append('link', JSON.stringify({
+        productId: selectedLink.productId || '',
+        category: selectedLink.category || '',
+        subcategory: selectedLink.subcategory || '',
+        subsubcategory: selectedLink.subsubcategory || ''
+      }))
+
+      // Handle hero link updates
+      formData.append('herolink', JSON.stringify({
+        productId: selectedHeroLink.productId || '',
+        category: selectedHeroLink.category || '',
+        subcategory: selectedHeroLink.subcategory || '',
+        subsubcategory: selectedHeroLink.subsubcategory || ''
+      }))
+      
+      // Handle image uploads
+      heroFiles.forEach(file => {
+        formData.append('hero', file)
+      })
+      
+      // Handle banner image
+      if (bannerFile) {
+        formData.append('banner', bannerFile)
+      }
+
+      const response = await axios.put(`${backendUrl}/api/settings`, formData, {
+        headers: { 
+          token,
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        setSettings(response.data.settings)
+        setBannerText(response.data.settings.text.banner)
+        setHeroText(response.data.settings.text.hero)
+        toast.success('Settings updated successfully')
+      }
+    } catch (error) {
+      toast.error('Failed to update settings')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleHeroImagesChange = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length > 5) {
+      toast.error('Maximum 5 hero images allowed')
+      return
+    }
+    setHeroFiles(files)
+  }
+
+  const BannerLinkSection = () => (
+    <div className="space-y-4">
+      <h3 className="text-md font-medium">Banner Link Settings</h3>
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm mb-2">Link Type</label>
+          <Select 
+            value={linkType} 
+            onValueChange={handleLinkTypeChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select link type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="product">Product Link</SelectItem>
+              <SelectItem value="category">Category Link</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Show current selection summary */}
+        {(selectedLink.productId || selectedLink.category) && (
+          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+            <p className="font-medium">Current Selection:</p>
+            {selectedLink.productId && (
+              <p>Product: {products.find(p => p._id === selectedLink.productId)?.name}</p>
+            )}
+            {selectedLink.category && (
+              <p>
+                {selectedLink.category}
+                {selectedLink.subcategory && ` > ${selectedLink.subcategory}`}
+                {selectedLink.subsubcategory && ` > ${selectedLink.subsubcategory}`}
+              </p>
+            )}
+          </div>
+        )}
+
+        {linkType === 'product' ? (
+          <div>
+            <label className="block text-sm mb-2">Select Product</label>
+            <Select 
+              value={selectedLink.productId || ''} 
+              onValueChange={(value) => handleLinkChange('productId', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a product" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map(product => (
+                  <SelectItem key={product._id} value={product._id}>
+                    <img className='size-8' src={product.image[0]}/>
+                    {product.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm mb-2">Category</label>
+              <Select 
+                value={selectedLink.category || ''} 
+                onValueChange={(value) => handleLinkChange('category', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Array.isArray(categories) ? categories : []).map(category => (
+                    <SelectItem key={category.key || category.name} value={category.name}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedLink.category && (
+              <div>
+                <label className="block text-sm mb-2">Subcategory</label>
+                <Select 
+                  value={selectedLink.subcategory || ''} 
+                  onValueChange={(value) => handleLinkChange('subcategory', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(categories)
+                      ? (categories.find(cat => cat.name === selectedLink.category)?.subcategories || [])
+                      : []
+                    ).map(sub => (
+                      <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedLink.subcategory && (
+              <div>
+                <label className="block text-sm mb-2">Second Level Category</label>
+                <Select 
+                  value={selectedLink.subsubcategory || ''} 
+                  onValueChange={(value) => handleLinkChange('subsubcategory', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select second level category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(categories)
+                      ? (
+                        categories
+                          .find(cat => cat.name === selectedLink.category)
+                          ?.subcategories?.find(sub => sub.name === selectedLink.subcategory)
+                          ?.subcategories || []
+                      )
+                      : []
+                    ).map(subSub => (
+                      <SelectItem key={subSub.name} value={subSub.name}>
+                        {subSub.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const handleLinkChange = async (field, value) => {
+    setIsUpdating(true);
+    try {
+      // Prepare the new link state
+      const newSelectedLink = {
+        ...selectedLink,
+        [field]: value
+      };
+
+      // Clear subsequent fields when changing higher level categories
+      if (field === 'category') {
+        newSelectedLink.subcategory = '';
+        newSelectedLink.subsubcategory = '';
+      } else if (field === 'subcategory') {
+        newSelectedLink.subsubcategory = '';
+      }
+
+      // Update local state first
+      setSelectedLink(newSelectedLink);
+
+      // Prepare the update data
+      const updateData = {
+        linkType,
+        ...newSelectedLink
+      };
+
+      // Send update to server
+      const response = await axios.put(
+        `${backendUrl}/api/settings/banner-link`,
+        updateData,
+        { headers: { token } }
+      );
+
+      if (response.data.success) {
+        setSettings(response.data.settings);
+        toast.success('Banner link updated successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to update banner link');
+      // Revert to previous state on error
+      setSelectedLink(selectedLink);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const HeroLinkSection = () => (
+    <div className="space-y-4">
+      <h3 className="text-md font-medium">Hero Link Settings</h3>
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm mb-2">Hero Text</label>
+          <Input
+            type="text"
+            value={heroText}
+            placeholder="Enter hero text"
+            onChange={(e) => setHeroText(e.target.value)}
+            className="mb-2"
+          />
+          {settings.text.hero && heroText !== settings.text.hero && (
+            <p className="text-sm text-gray-500">
+              Current text: {settings.text.hero}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm mb-2">Link Type</label>
+          <Select 
+            value={heroLinkType} 
+            onValueChange={handleHeroLinkTypeChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select link type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="product">Product Link</SelectItem>
+              <SelectItem value="category">Category Link</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Show current selection summary */}
+        {(selectedHeroLink.productId || selectedHeroLink.category) && (
+          <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+            <p className="font-medium">Current Selection:</p>
+            {selectedHeroLink.productId && (
+              <p>Product: {products.find(p => p._id === selectedHeroLink.productId)?.name}</p>
+            )}
+            {selectedHeroLink.category && (
+              <p>
+                {selectedHeroLink.category}
+                {selectedHeroLink.subcategory && ` > ${selectedHeroLink.subcategory}`}
+                {selectedHeroLink.subsubcategory && ` > ${selectedHeroLink.subsubcategory}`}
+              </p>
+            )}
+          </div>
+        )}
+
+        {heroLinkType === 'product' ? (
+          <div>
+            <label className="block text-sm mb-2">Select Product</label>
+            <Select 
+              value={selectedHeroLink.productId || ''} 
+              onValueChange={(value) => handleHeroLinkChange('productId', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a product" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map(product => (
+                  <SelectItem key={product._id} value={product._id}>
+                    <div className="flex items-center gap-2">
+                      <img className='size-8' src={product.image[0]} alt={product.name}/>
+                      <span>{product.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm mb-2">Category</label>
+              <Select 
+                value={selectedHeroLink.category || ''} 
+                onValueChange={(value) => handleHeroLinkChange('category', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Array.isArray(categories) ? categories : []).map(category => (
+                    <SelectItem key={category.name} value={category.name}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedHeroLink.category && (
+              <div>
+                <label className="block text-sm mb-2">Subcategory</label>
+                <Select 
+                  value={selectedHeroLink.subcategory || ''} 
+                  onValueChange={(value) => handleHeroLinkChange('subcategory', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(categories)
+                      ? (categories.find(cat => cat.name === selectedHeroLink.category)?.subcategories || [])
+                      : []
+                    ).map(sub => (
+                      <SelectItem key={sub.name} value={sub.name}>{sub.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedHeroLink.subcategory && (
+              <div>
+                <label className="block text-sm mb-2">Second Level Category</label>
+                <Select 
+                  value={selectedHeroLink.subsubcategory || ''} 
+                  onValueChange={(value) => handleHeroLinkChange('subsubcategory', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select second level category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Array.isArray(categories)
+                      ? (
+                        categories
+                          .find(cat => cat.name === selectedHeroLink.category)
+                          ?.subcategories?.find(sub => sub.name === selectedHeroLink.subcategory)
+                          ?.subcategories || []
+                      )
+                      : []
+                    ).map(subSub => (
+                      <SelectItem key={subSub.name} value={subSub.name}>{subSub.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const handleLinkTypeChange = (value) => {
+    setLinkType(value);
+    
+    // Keep existing values but clear the other type's values
+    if (value === 'product') {
+      setSelectedLink(prev => ({
+        ...prev,
+        productId: prev.productId || '', // Keep product ID if exists
+        category: '',
+        subcategory: '',
+        subsubcategory: ''
+      }));
+    } else {
+      setSelectedLink(prev => ({
+        ...prev,
+        productId: '',
+        category: prev.category || '', // Keep category if exists
+        subcategory: prev.subcategory || '', // Keep subcategory if exists
+        subsubcategory: prev.subsubcategory || '' // Keep subsubcategory if exists
+      }));
+    }
+  };
+
+  const handleHeroLinkTypeChange = (value) => {
+    setHeroLinkType(value)
+    
+    if (value === 'product') {
+      setSelectedHeroLink(prev => ({
+        ...prev,
+        productId: prev.productId || '',
+        category: '',
+        subcategory: '',
+        subsubcategory: ''
+      }))
+    } else {
+      setSelectedHeroLink(prev => ({
+        ...prev,
+        productId: '',
+        category: prev.category || '',
+        subcategory: prev.subcategory || '',
+        subsubcategory: prev.subsubcategory || ''
+      }))
+    }
+  }
+
+  const handleHeroLinkChange = async (field, value) => {
+    setIsUpdating(true)
+    try {
+      const newSelectedHeroLink = {
+        ...selectedHeroLink,
+        [field]: value
+      }
+
+      if (field === 'category') {
+        newSelectedHeroLink.subcategory = ''
+        newSelectedHeroLink.subsubcategory = ''
+      } else if (field === 'subcategory') {
+        newSelectedHeroLink.subsubcategory = ''
+      }
+
+      setSelectedHeroLink(newSelectedHeroLink)
+
+      const updateData = {
+        linkType: heroLinkType,
+        ...newSelectedHeroLink
+      }
+
+      const response = await axios.put(
+        `${backendUrl}/api/settings/hero-link`,
+        updateData,
+        { headers: { token } }
+      )
+
+      if (response.data.success) {
+        setSettings(response.data.settings)
+        toast.success('Hero link updated successfully')
+      }
+    } catch (error) {
+      toast.error('Failed to update hero link')
+      setSelectedHeroLink(selectedHeroLink)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [productsRes, categoriesRes] = await Promise.all([
+          axios.get(`${backendUrl}/api/product/list`, { headers: { token } }),
+          axios.get(`${backendUrl}/api/categories`)
+        ]);
+
+        if (productsRes.data.success) {
+          setProducts(productsRes.data.products);
+        }
+        if (categoriesRes.data.success) {
+          setCategories(categoriesRes.data.categories);
+        }
+      } catch (error) {
+        toast.error('Failed to fetch data');
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (settings.link) {
+      // Determine link type based on which fields are populated
+      const newLinkType = settings.link.productId ? 'product' : 'category';
+      setLinkType(newLinkType);
+      
+      // Update selected link state
+      setSelectedLink({
+        productId: settings.link.productId || '',
+        category: settings.link.category || '',
+        subcategory: settings.link.subcategory || '',
+        subsubcategory: settings.link.subsubcategory || ''
+      });
+    }
+  }, [settings.link]);
+
+  useEffect(() => {
+    if (settings.text.banner) {
+      setBannerText(settings.text.banner)
+    }
+  }, [settings.text.banner])
+
+  useEffect(() => {
+    if (settings.text.hero) {
+      setHeroText(settings.text.hero)
+    }
+    if (settings.herolink) {
+      const newHeroLinkType = settings.herolink.productId ? 'product' : 'category'
+      setHeroLinkType(newHeroLinkType)
+      setSelectedHeroLink({
+        productId: settings.herolink.productId || '',
+        category: settings.herolink.category || '',
+        subcategory: settings.herolink.subcategory || '',
+        subsubcategory: settings.herolink.subsubcategory || ''
+      })
+    }
+  }, [settings.text.hero, settings.herolink])
+
+  return (
+    <div className="p-4 sm:p-6 max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Currency Settings</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm mb-2">Currency Name</label>
+              <Input
+                value={settings.currency.name}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  currency: { ...settings.currency, name: e.target.value }
+                })}
+                placeholder="USD"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-2">Currency Sign</label>
+              <Input
+                value={settings.currency.sign}
+                onChange={(e) => setSettings({
+                  ...settings,
+                  currency: { ...settings.currency, sign: e.target.value }
+                })}
+                placeholder="$"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Notification Settings</h2>
+          <div>
+            <label className="block text-sm mb-2">Notification Email</label>
+            <Input
+              type="email"
+              value={settings.email.notifications}
+              onChange={(e) => setSettings({
+                ...settings,
+                email: { ...settings.email, notifications: e.target.value }
+              })}
+              placeholder="notifications@example.com"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Image Settings</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm mb-2">Hero Images (up to 5)</label>
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleHeroImagesChange}
+                className="mb-4"
+              />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {settings.images.hero.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={`${image}`}
+                      alt={`Hero ${index + 1}`}
+                      className="w-full h-40 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => {
+                        const newHeroImages = settings.images.hero.filter((_, i) => i !== index)
+                        setSettings({
+                          ...settings,
+                          images: { ...settings.images, hero: newHeroImages }
+                        })
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full 
+                               opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-2">Banner Image</label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setBannerFile(e.target.files[0])}
+              />
+              <div>
+                <label className="block text-sm mb-2">Banner Text</label>
+                <Input
+                  type="text"
+                  value={bannerText}
+                  placeholder="Enter banner text"
+                  onChange={(e) => setBannerText(e.target.value)}
+                  className="mb-2"
+                />
+                {settings.text.banner && bannerText !== settings.text.banner && (
+                  <p className="text-sm text-gray-500">
+                    Current text: {settings.text.banner}
+                  </p>
+                )}
+              </div>
+              {settings.images.banner && (
+                <img 
+                  src={`${settings.images.banner}`}
+                  alt="Banner"
+                  className="mt-2 max-w-full h-auto"
+                />
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <BannerLinkSection />
+        </div>
+
+        <div className="space-y-6">
+          <HeroLinkSection />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="mt-6 w-full sm:w-auto px-6 py-2 bg-black text-white rounded-lg 
+                   hover:bg-gray-800 disabled:opacity-50"
+        >
+          {isLoading ? 'Saving...' : 'Save Settings'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+export default Settings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div className='w-full'>
+        <p className='mb-2'>Product Sizes and Quantities</p>
+        <Controller
+          name="sizes"
+          control={control}
+          render={({ field }) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-w-[500px]">
+              {getSizeOptions().map((size) => (
+                <div key={size} className="flex flex-col gap-2 p-3 border rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{size}</span>
+                    <Checkbox 
+                      checked={field.value.some(s => s.size === size)}
+                      onCheckedChange={(checked) => {
+                        const newSizes = checked 
+                          ? [...field.value, { size, quantity: 0 }]
+                          : field.value.filter(s => s.size !== size);
+                        field.onChange(newSizes);
+                      }}
+                    />
+                  </div>
+                  {field.value.some(s => s.size === size) && (
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="Qty"
+                      className="w-full"
+                      value={field.value.find(s => s.size === size)?.quantity || 0}
+                      onChange={(e) => {
+                        const quantity = parseInt(e.target.value) || 0;
+                        const newSizes = field.value.map(s => 
+                          s.size === size ? { ...s, quantity } : s
+                        );
+                        field.onChange(newSizes);
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        />
+        {errors.sizes && <p className="text-red-500 text-sm">{errors.sizes.message}</p>}
+      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      import { v2 as cloudinary } from 'cloudinary'
+import productModel from '../models/productModel.js'
+import User from '../models/userModel.js'
+import cloudinaryConfig from '../config/cloudinary.js';
+
+// Helper function to validate color data
+const validateColorData = (colors) => {
+  if (!Array.isArray(colors) || colors.length === 0) {
+    throw new Error('At least one color variant is required');
+  }
+
+  colors.forEach(color => {
+    if (!color.colorName || !color.colorHex || !color.sizes) {
+      throw new Error('Each color must have a name, hex value, and sizes');
+    }
+  });
+};
+
+// function for add products
+const addProduct = async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      price,
+      category,
+      subcategory,
+      subsubcategory,
+      colors,
+      bestseller,
+      preorder,
+      label
+    } = req.body;
+
+    // Parse colors data from JSON string if needed
+    const colorData = typeof colors === 'string' ? JSON.parse(colors) : colors;
+
+    // Validate colors data
+    validateColorData(colorData);
+
+    // Handle main product images
+    const mainImageUrls = [];
+    const mainImageFiles = req.files.filter(file => file.fieldname === 'image');
+
+    console.log("main image files: ", mainImageFiles)
+
+    for (const file of mainImageFiles) {
+      const result = await cloudinary.uploader.upload(file.path);
+      mainImageUrls.push(result.secure_url);
+    }
+
+    // Handle color variant images
+    const processedColors = await Promise.all(colorData.map(async (color, index) => {
+      const colorImages = [];
+      const colorImageFiles = req.files.filter(file => file.fieldname === `colorImages_${index}`);
+
+      console.log("color image files: ", colorImageFiles)
+      
+      for (const file of colorImageFiles) {
+        const result = await cloudinary.uploader.upload(file.path);
+        colorImages.push(result.secure_url);
+      }
+
+      return {
+        ...color,
+        colorImages
+      };
+    }));
+
+    // Create new product
+    const newProduct = new productModel({
+      name,
+      description,
+      price,
+      image: mainImageUrls,
+      category,
+      subcategory,
+      subsubcategory,
+      colors: processedColors,
+      bestseller: bestseller || false,
+      preorder: preorder || false,
+      label: label || '',
+      date: new Date()
+    })
+
+    // Save product
+    await newProduct.save({ writeConcern: { w: 1, wtimeout: 5000 }})
+
+    res.json({
+      success: true,
+      message: 'Product added successfully'
+    })
+  } catch (error) {
+    console.error('Add product error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to add product'
+    })
+  }
+}
+
+// function for list products
+const listProducts = async (req,res) => {
+    try { 
+        const products = await productModel.find({});
+        res.json({
+            success: true,
+            products
+        })
+    } catch (error) {
+        console.log(error)
+        res.json({
+            success: false,
+            message: error.message
+        })
+    }
+
+}
+
+// function for removing product
+const removeProduct = async (req,res) => {
+    try {
+        
+        const remove = await productModel.findByIdAndDelete({_id : req.body.id},
+          { writeConcern: { 
+            w: 1,
+            wtimeout: 5000 
+          }})
+        if (!remove) {
+          return res.json({
+            success: false,
+            message: "Could not find a product to delete!"
+          })
+        }
+        res.json({
+            success: true,
+            message: "Product Deleted"
+        })
+
+    } catch (error) {
+        console.log(error)
+        res.json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+// function for single product info
+const singleProduct = async (req,res) => {
+    try {
+        const { productId } = req.body;
+        const product = await productModel.findById(productId)
+
+        res.json({
+            success: true,
+            product
+        })
+    } catch (error) {
+        console.log(error)
+        res.json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+
+    if (updates.colors) {
+      const colorData = typeof updates.colors === 'string' 
+        ? JSON.parse(updates.colors) 
+        : updates.colors;
+
+      validateColorData(colorData);
+
+      // Handle new color images if any
+      if (req.files && req.files.length > 0) {
+        updates.colors = await Promise.all(colorData.map(async (color, index) => {
+          const colorImages = [...(color.colorImages || [])];
+          const newColorImages = req.files.filter(file => file.fieldname === `colorImages_${index}`);
+
+          for (const file of newColorImages) {
+            const result = await cloudinary.uploader.upload(file.path);
+            colorImages.push(result.secure_url);
+          }
+
+          return {
+            ...color,
+            colorImages: colorImages.slice(0, 4) // Ensure max 4 images
+          };
+        }));
+      }
+    }
+
+    // Handle main image updates if any
+    const mainImageFiles = req.files ? req.files.filter(file => file.fieldname === 'image') : [];
+    if (mainImageFiles.length > 0) {
+      const mainImageUrls = [];
+      for (const file of mainImageFiles) {
+        const result = await cloudinary.uploader.upload(file.path);
+        mainImageUrls.push(result.secure_url);
+      }
+      updates.image = mainImageUrls;
+    }
+
+    const product = await productModel.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Product updated successfully',
+      product
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
+// Add quantity update endpoint
+const updateQuantity = async (req, res) => {
+  try {
+    const { productId, size, quantity } = req.body
+
+    const product = await productModel.findById(productId)
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      })
+    }
+
+    const sizeIndex = product.sizes.findIndex(s => s.size === size)
+    if (sizeIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Size not found'
+      })
+    }
+
+    product.sizes[sizeIndex].quantity = quantity
+    await product.save()
+
+    res.json({
+      success: true,
+      message: 'Quantity updated successfully'
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+
+const addReview = async (req, res) => {
+  try {
+    const { productId, rating, comment } = req.body
+    const userId = req.body.userId // Changed from req.user.id to req.user._id
+
+    // Validate inputs
+    if (!productId || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      })
+    }
+
+    // Find product first and check if exists
+    const product = await productModel.findById(productId)
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      })
+    }
+
+    // Get user details
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    // Check if user has already reviewed
+    const existingReview = product.reviews?.find(
+      review => review.userId.toString() === userId.toString()
+    )
+
+    console.log('Existing review:', existingReview)
+
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already reviewed this product'
+      })
+    }
+
+    // Initialize reviews array if it doesn't exist
+    if (!product.reviews) {
+      product.reviews = []
+    }
+
+    // Add review
+    product.reviews.push({
+      userId,
+      userName: `${user.name}`,
+      rating: Number(rating),
+      comment,
+      createdAt: new Date()
+    })
+
+    // Ensure calculateAverageRating method exists
+    if (typeof product.calculateAverageRating !== 'function') {
+      product.averageRating = product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
+      product.totalReviews = product.reviews.length
+    } else {
+      product.calculateAverageRating()
+    }
+
+    // Save with proper error handling
+    await product.save()
+
+    res.json({
+      success: true,
+      message: 'Review added successfully',
+      averageRating: product.averageRating,
+      totalReviews: product.totalReviews
+    })
+
+  } catch (error) {
+    console.error('Add review error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Error adding review: ' + (error.message || 'Unknown error')
+    })
+  }
+}
+
+const getProductReviews = async (req, res) => {
+  try {
+    const { productId } = req.params
+    const product = await productModel.findById(productId)
+      .select('reviews averageRating totalReviews')
+      .sort({ 'reviews.createdAt': -1 })
+
+    res.json({
+      success: true,
+      reviews: product.reviews,
+      averageRating: product.averageRating,
+      totalReviews: product.totalReviews
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+
+const addUserPhoto = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const userId = req.body.userId; // Get userId from auth middleware
+    
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No photo uploaded' 
+      });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      resource_type: 'image',
+      folder: 'user-photos' // Optional: organize uploads in folders
+    });
+
+    const product = await productModel.findById(productId);
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    // Initialize userPhotos array if it doesn't exist
+    if (!product.userPhotos) {
+      product.userPhotos = [];
+    }
+
+    // Add new photo
+    product.userPhotos.push({
+      imageUrl: result.secure_url,
+      userId: userId,
+      uploadDate: new Date()
+    });
+
+    await product.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Photo uploaded successfully',
+      userPhotos: product.userPhotos,
+      uploadedPhoto: result.secure_url 
+    });
+  } catch (error) {
+    console.error('Photo upload error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error adding photo', 
+      error: error.message 
+    });
+  }
+};
+
+const getUserPhotos = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    
+    const product = await productModel.findById(productId)
+      .select('userPhotos')
+      .populate('userPhotos.userId', 'name'); // Optional: populate user details
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true,
+      userPhotos: product.userPhotos || [] 
+    });
+  } catch (error) {
+    console.error('Fetch photos error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching photos', 
+      error: error.message 
+    });
+  }
+};
+
+export { addProduct, listProducts, removeProduct, singleProduct, updateProduct, updateQuantity, addReview, getProductReviews, addUserPhoto, getUserPhotos }
+
+
+
+
+//-------------------------------------add page___________________________
+
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import axios from 'axios'
+import { backendUrl } from '../App'
+import { toast } from "sonner"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import * as z from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm, useFieldArray } from "react-hook-form"
+
+const CLOTHING_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
+const SHOE_SIZES = Array.from({ length: 23 }, (_, i) => (i + 26).toString())
+const KIDS_SHOE_SIZES = Array.from({ length: 13 }, (_, i) => (i + 26).toString())
+
+// Custom File Upload Component
+const FileUpload = ({ value = [], onChange, maxFiles = 4, label = "Upload Images" }) => {
+  const fileInputRef = useRef(null)
+  const [previews, setPreviews] = useState([])
+
+  useEffect(() => {
+    if (value && value.length > 0) {
+      const newPreviews = value.map(file => {
+        if (file instanceof File) {
+          return {
+            file,
+            url: URL.createObjectURL(file),
+            name: file.name
+          }
+        }
+        return null
+      }).filter(Boolean)
+      setPreviews(newPreviews)
+    } else {
+      setPreviews([])
+    }
+  }, [value])
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length > maxFiles) {
+      toast.warning(`Maximum ${maxFiles} images allowed`)
+      return
+    }
+    onChange(files)
+  }
+
+  const removeFile = (index) => {
+    const newFiles = value.filter((_, i) => i !== index)
+    onChange(newFiles)
+  }
+
+  const clearAll = () => {
+    onChange([])
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="w-full max-w-[500px]">
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-gray-400 transition-colors">
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          id={`file-upload-${Math.random()}`}
+        />
+        <label
+          htmlFor={`file-upload-${Math.random()}`}
+          className="cursor-pointer flex flex-col items-center justify-center py-4"
+        >
+          <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          </svg>
+          <span className="text-sm text-gray-600">{label}</span>
+          <span className="text-xs text-gray-400 mt-1">Max {maxFiles} files</span>
+        </label>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+          className="w-full mt-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+
+      {previews.length > 0 && (
+        <div className="mt-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium">Selected Images ({previews.length}/{maxFiles})</span>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-xs text-red-600 hover:text-red-800"
+            >
+              Clear All
+            </button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {previews.map((preview, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={preview.url}
+                  alt={preview.name}
+                  className="w-full h-20 object-cover rounded border"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 truncate">
+                  {preview.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const Add = ({token}) => {
+  const [availableSubcategories, setAvailableSubcategories] = useState([])
+  const [availableSubSubcategories, setAvailableSubSubcategories] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [categories, setCategories] = useState({})
+
+  // Add new color variant schema
+  const colorVariantSchema = z.object({
+    colorName: z.string().min(1, "Color name is required"),
+    colorHex: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Invalid hex color"),
+    colorImages: z.array(z.any())
+      .min(1, "At least one image is required")
+      .max(4, "Maximum 4 images allowed per color"),
+    sizes: z.array(z.object({
+      size: z.string().min(1, "Size is required"),
+      quantity: z.number().min(0, "Quantity cannot be negative")
+    })).min(1, "At least one size is required")
+  })
+
+  // Update validation schema
+  const validationSchema = z.object({
+    images: z.array(z.any())
+      .min(1, "Please select at least one file")
+      .max(4, "Maximum 4 images allowed"),
+    name: z.string().min(2, {message: "Enter product name"}),
+    description: z.string().min(2, {message: "Description is required"}),
+    price: z.coerce.number().positive({message : "Please enter product price"}),
+    category: z.string().min(1, {message: "Category is required"}),
+    subcategory: z.string().min(1, {message: "Subcategory is required"}),
+    subsubcategory: z.string().min(1, {message: "Second level category is required"}),
+    bestseller: z.boolean(),
+    preorder: z.boolean(),
+    label: z.string(),
+    sizeType: z.string(),
+    colors: z.array(colorVariantSchema)
+      .min(1, "At least one color variant is required"),
+  })
+
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitSuccessful } } = useForm({
+    resolver: zodResolver(validationSchema),
+    defaultValues: {
+      images: [],
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      subcategory: "",
+      subsubcategory: "",
+      bestseller: false,
+      preorder: false,
+      label: "none",
+      sizeType: 'clothing',
+      colors: [],
+    },
+  })
+  
+  // Add this line to check if all category fields are selected
+  const canAddColors = Boolean(
+    watch('category') && 
+    watch('subcategory') && 
+    watch('subsubcategory')
+  )
+
+  // Add useFieldArray hook for colors
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "colors"
+  })
+
+  async function onSubmit(values) {
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData()
+
+      // Add basic product info
+      Object.keys(values).forEach(key => {
+        if (!['images', 'colors'].includes(key)) {
+          formData.append(key, values[key])
+        }
+      })
+
+      // Handle main product images
+      if (values.images && values.images.length > 0) {
+        values.images.forEach((file) => {
+          if (file instanceof File) {
+            formData.append('image', file)
+          }
+        })
+      }
+
+      // Handle color variants data (excluding images)
+      const colorsData = values.colors.map(color => ({
+        colorName: color.colorName,
+        colorHex: color.colorHex,
+        sizes: color.sizes
+      }))
+      formData.append('colors', JSON.stringify(colorsData))
+
+      // Handle color images - append each color's images with color index
+      values.colors.forEach((color, colorIndex) => {
+        if (color.colorImages && color.colorImages.length > 0) {
+          color.colorImages.forEach((file) => {
+            if (file instanceof File) {
+              formData.append(`colorImages_${colorIndex}`, file)
+            }
+          })
+        }
+      })
+
+      const response = await axios.post(backendUrl + '/api/product/add', formData, {
+        headers: { 
+          token,
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.data.success) {
+        toast.success('Product added successfully!')
+        reset()
+        // Clear color variants
+        while (fields.length > 0) {
+          remove(0)
+        }
+      }
+    } catch (error) {
+      console.error('Error adding product:', error)
+      toast.error(error.response?.data?.message || 'Failed to add product')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Update the fetchCategories function
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/categories`, {
+        headers: { token }
+      })
+      if (response.data.success) {
+        // Convert array to object with names as keys
+        const categoriesObj = response.data.categories.reduce((acc, cat) => {
+          acc[cat.name] = {
+            ...cat,
+            subcategories: cat.subcategories || []
+          }
+          return acc
+        }, {})
+        setCategories(categoriesObj)
+      }
+    } catch (error) {
+      toast.error('Failed to fetch categories')
+      console.error(error)
+    }
+  }
+
+  // Modify the existing useEffect to fetch categories on component mount
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  // Update the fetchSubcategories function
+  const fetchSubcategories = async (selectedCategory) => {
+    if (categories[selectedCategory]) {
+      setAvailableSubcategories(
+        categories[selectedCategory].subcategories.map(sub => sub.name)
+      )
+    }
+  }
+
+  // Update the fetchSubSubcategories function
+  const fetchSubSubcategories = async (category, subcategory) => {
+    if (categories[category]) {
+      const subCat = categories[category].subcategories
+        .find(sub => sub.name === subcategory)
+      if (subCat) {
+        setAvailableSubSubcategories(subCat.subcategories)
+      }
+    }
+  }
+
+  useEffect(() => {
+    const selectedCategory = watch('category')
+    if (selectedCategory) {
+      fetchSubcategories(selectedCategory)
+    }
+  }, [watch('category'), categories])
+
+  useEffect(() => {
+    const category = watch('category')
+    const subcategory = watch('subcategory')
+    if (category && subcategory) {
+      fetchSubSubcategories(category, subcategory)
+    }
+  }, [watch('category'), watch('subcategory'), categories])
+
+  // Memoize getSizeOptions to prevent it from being recreated on every render
+  const getSizeOptions = useCallback(() => {
+    const category = watch('category')
+    const sizeType = watch('sizeType')
+
+    if (sizeType === 'shoes') {
+      return category === 'Kids' ? KIDS_SHOE_SIZES : SHOE_SIZES
+    }
+    return CLOTHING_SIZES
+  }, [watch('category'), watch('sizeType')])
+
+  // New component for color variant
+  const ColorVariant = ({ index, control, remove, watch, getSizeOptions }) => {
+    return (
+      <div className="border rounded-lg p-4 mb-4 bg-gray-50">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-medium">Color Variant {index + 1}</h3>
+          <button
+            type="button"
+            onClick={() => remove(index)}
+            className="text-red-500 hover:text-red-700 px-3 py-1 rounded border border-red-300 hover:bg-red-50"
+          >
+            Remove Color
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block mb-2 font-medium">Color Name</label>
+            <Controller
+              name={`colors.${index}.colorName`}
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <Input {...field} placeholder="e.g., Navy Blue" />
+                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+                </>
+              )}
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-medium">Color</label>
+            <Controller
+              name={`colors.${index}.colorHex`}
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={field.value || '#000000'}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="h-[42px] w-[100px] rounded border"
+                    />
+                    <Input
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      placeholder="#000000"
+                      className="flex-1"
+                    />
+                  </div>
+                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+                </>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block mb-2 font-medium">Color Images (Max 4)</label>
+          <Controller
+            name={`colors.${index}.colorImages`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <FileUpload
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  maxFiles={4}
+                  label={`Upload images for ${watch(`colors.${index}.colorName`) || 'this color'}`}
+                />
+                {error && (
+                  <p className="text-red-500 text-sm mt-1">{error.message}</p>
+                )}
+              </>
+            )}
+          />
+        </div>
+
+        <div className="sizes-section mt-4">
+          <p className="font-medium mb-4">Sizes and Quantities</p>
+          <Controller
+            name={`colors.${index}.sizes`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {getSizeOptions().map((size) => (
+                    <div key={size} className="flex flex-col gap-2 p-3 border rounded-md">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{size}</span>
+                        <Checkbox 
+                          checked={field.value?.some(s => s.size === size) || false}
+                          onCheckedChange={(checked) => {
+                            const currentSizes = field.value || []
+                            const newSizes = checked 
+                              ? [...currentSizes, { size, quantity: 0 }]
+                              : currentSizes.filter(s => s.size !== size)
+                            field.onChange(newSizes)
+                          }}
+                        />
+                      </div>
+                      {field.value?.some(s => s.size === size) && (
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Qty"
+                          className="w-full"
+                          value={field.value.find(s => s.size === size)?.quantity || 0}
+                          onChange={(e) => {
+                            const quantity = parseInt(e.target.value) || 0
+                            const newSizes = field.value.map(s => 
+                              s.size === size ? { ...s, quantity } : s
+                            )
+                            field.onChange(newSizes)
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className='flex flex-col w-full items-start gap-3'>
+      <div className='w-full'>
+        <p className='mb-2'>Upload up to 4 main product images</p>
+        <div className='flex flex-col gap-2'>
+          <Controller
+            name="images"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <FileUpload
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  maxFiles={4}
+                  label="Upload main product images"
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className='w-full '>
+        <p className='mb-2'>Product name</p>
+        <Controller
+          name="name"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <>
+              <Input 
+                {...field} 
+                type="text"
+                placeholder="Enter product name" 
+                className='w-full px-3 py-2 max-w-[500px]'
+              />
+              {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+            </>
+          )}
+        />
+      </div>
+
+      <div className='w-full '>
+        <p className='mb-2'>Product description</p>
+        <Controller
+          name="description"
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <>
+              <Textarea 
+                {...field} 
+                placeholder='Enter description'
+                className='w-full max-w-[500px] px-3 py-2'
+              />
+              {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+            </>
+          )}
+        />
+      </div>
+
+      <div className='flex flex-col sm:flex-row gap-2 w-full sm:gap-8'>
+
+        <div>
+          <p className='mb-2'>Product category</p>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select 
+                  value={field.value || ""}
+                  onValueChange={(value) => {
+                    field.onChange(value)
+                    // Reset subcategory when category changes
+                    reset({ ...watch(), subcategory: '', subsubcategory: '' })
+                    // Fetch subcategories for selected category
+                    fetchSubcategories(value)
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Choose..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(categories).map((categoryName) => (
+                      <SelectItem key={categoryName} value={categoryName}>
+                        {categoryName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Subcategory</p>
+          <Controller
+            name="subcategory"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select 
+                  value={field.value || ""}
+                  onValueChange={(value) => {
+                    field.onChange(value)
+                    reset({ ...watch(), subsubcategory: '' })
+                    const category = watch('category')
+                    if (category && value) {
+                      fetchSubSubcategories(category, value)
+                    }
+                  }}
+                  disabled={!watch('category') || availableSubcategories.length === 0}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Choose..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubcategories.map((subcategory) => (
+                      <SelectItem key={subcategory} value={subcategory}>
+                        {subcategory}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Second Level Category</p>
+          <Controller
+            name="subsubcategory"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select 
+                  value={field.value || ""}
+                  onValueChange={(value) => field.onChange(value)}
+                  disabled={!watch('subcategory') || availableSubSubcategories.length === 0}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Choose..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubSubcategories.map((subsubcategory) => (
+                      <SelectItem key={subsubcategory.name} value={subsubcategory.name}>
+                        {subsubcategory.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Product price</p> 
+          <Controller
+            name="price"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input 
+                  type="number"
+                  placeholder="0" 
+                  className='w-full px-3 py-2 sm:w-[120px]'
+                  value={field.value || ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <p className="mb-2">Size Type</p>
+        <Controller
+          name="sizeType"
+          control={control}
+          render={({ field }) => (
+            <ToggleGroup 
+              type="single" 
+              value={field.value}
+              onValueChange={(value) => {
+                if (value) {
+                  field.onChange(value)
+                  // Reset sizes within all color variants when changing size type
+                  const currentColors = watch('colors')
+                  const updatedColors = currentColors.map(color => ({
+                    ...color,
+                    sizes: []
+                  }))
+                  setValue('colors', updatedColors, { shouldDirty: true, shouldValidate: true })
+                }
+              }}
+              className="flex gap-2"
+            >
+              <ToggleGroupItem 
+                value="clothing" 
+                className={`px-4 py-2 border rounded-md ${
+                  field.value === 'clothing' ? 'bg-black text-white' : ''
+                }`}
+              >
+                Clothing Sizes
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="shoes" 
+                className={`px-4 py-2 border rounded-md ${
+                  field.value === 'shoes' ? 'bg-black text-white' : ''
+                }`}
+              >
+                Shoe Sizes
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
+        />
+      </div>
+
+      <div className='flex items-center gap-2 mt-2 '>
+        <label
+          htmlFor="bestseller"
+          className="cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Add to bestseller
+        </label>
+        <Controller
+          name="bestseller"
+          control={control}
+          render={({ field }) => (
+            <Checkbox 
+              id="bestseller" 
+              checked={field.value}
+              onCheckedChange={(value) => field.onChange(value)}
+            />
+          )}
+        />
+      </div>
+
+      <div className='flex items-center gap-2 mt-2'>
+        <label
+          htmlFor="preorder"
+          className="cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Set as preorder
+        </label>
+        <Controller
+          name="preorder"
+          control={control}
+          render={({ field }) => (
+            <Checkbox 
+              id="preorder" 
+              checked={field.value}
+              onCheckedChange={(value) => field.onChange(value)}
+            />
+          )}
+        />
+      </div>
+
+      <div className='w-full'>
+        <p className='mb-2'>Product Label</p>
+        <Controller
+          name="label"
+          control={control}
+          render={({ field }) => (
+            <Select 
+              value={field.value || "none"}
+              onValueChange={(value) => field.onChange(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a label..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Label</SelectItem>
+                <SelectItem value="New model">New model</SelectItem>
+                <SelectItem value="Limited Edition">Limited Edition</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      {canAddColors && (
+        <div className="w-full mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">Color Variants</h2>
+            <button
+              type="button"
+              onClick={() => append({
+                colorName: '',
+                colorHex: '#000000',
+                colorImages: [],
+                sizes: []
+              })}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              Add New Color
+            </button>
+          </div>
+
+          {fields.map((field, index) => (
+            <ColorVariant
+              key={field.id}
+              index={index}
+              control={control}
+              remove={remove}
+              watch={watch}
+              getSizeOptions={getSizeOptions}
+            />
+          ))}
+        </div>
+      )}
+
+      <button 
+        type='submit' 
+        disabled={isSubmitting}
+        className={`group text-sm mt-4 cursor-pointer pl-5 pr-4 py-2 rounded-lg flex items-center
+          ${isSubmitting 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-gray-700 hover:bg-gray-900'} 
+          text-white`}
+      >
+        {isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Adding Product...
+          </span>
+        ) : (
+          <>
+            <p>Add product</p>
+            <svg 
+              className='transition-all duration-200 group-hover:rotate-90 ml-2 text-white' 
+              width="30" 
+              height="30" 
+              fill="none" 
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="10" stroke="#ffffff" strokeWidth="1.5"/>
+              <path 
+                stroke="#ffffff" 
+                strokeLinecap="round" 
+                strokeWidth="1.5" 
+                d="M15 12h-3m0 0H9m3 0V9m0 3v3"
+              />
+            </svg>
+          </>
+        )}
+      </button>
+    </form>
+  )
+}
+
+export default Add

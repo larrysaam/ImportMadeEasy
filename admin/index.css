@@ -1,0 +1,12 @@
+/* Example: admin/src/index.css or a global stylesheet */
+body {
+  top: 0px !important; /* Override Google Translate's top positioning */
+}
+
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.skiptranslate {
+    display:none !important
+    }
