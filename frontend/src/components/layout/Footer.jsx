@@ -8,9 +8,9 @@ const Footer = () => {
     <div className='pl-4 pr-4 sm:pl-8 sm:pr-8 lg:pl-16 lg:pr-16 bg-white'>
       <div className='flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10 md:mt-40 text-sm'>
         <div>
-          <img src={assets.KMlogo} alt='logo' className='mb-5 w-24' />
+          <img src={assets.IMELogo} alt='logo' className='mb-5 w-24' />
           <p className='w-full md:w-2/3 text-gray-600'>
-            At Clothing Store, we believe fashion is more than just clothing—it's a statement. Our mission is to provide high-quality, stylish, and affordable fashion that helps you express yourself with confidence.
+            Import Made Easy is a modern importation company that helps individuals and businesses in Cameroon access quality, affordable products from Nigeria with speed and reliability. From sourcing to delivery, we make importing simple, secure, and stress-free.
           </p>
         </div>
 
@@ -35,8 +35,8 @@ const Footer = () => {
         <div>
           <p className='text-xl font-medium mb-5'>GET IN TOUCH</p>
           <ul className='flex flex-col gap-1 text-gray-600'>
-            <li>+82-10-2222-3333</li>
-            <li>contactus@welcome.com</li>
+            <li>+237 670-019-205</li>
+            <li>contactus@importmadeeasy.com</li>
           </ul>
           <p className='text-gray-400 mt-5 mb-2'>Follow us on</p>
           <div className='flex gap-4 text-gray-600 text-lg'>
@@ -59,7 +59,7 @@ const Footer = () => {
       <div>
         <hr />
         <div className='flex justify-between max-sm:flex-col items-center max-sm:mb-5'>
-          <p className='py-5 text-sm text-center text-gray-400'>Copyright 2025 MyWebSite.com - All Rights Reserved.</p>
+          <p className='py-5 text-sm text-center text-gray-400'>Copyright 2025 importmadeeasy.com - All Rights Reserved.</p>
           <div className='flex items-center gap-3'>
             <div className='w-[46px] h-[30px] border bg-slate-50 rounded flex items-center justify-center'>
               <img src={assets.Mastercard} alt='badges' />

@@ -141,7 +141,7 @@ const Navbar = () => {
       >
         <div className='flex items-center justify-between py-5 font-medium'>
           <Link to='/' className='cursor-pointer'>
-            <img src={assets.KMlogo} alt='logo' className='w-16 sm:w-18' />
+            <img src={assets.IMELogo} alt='logo' className='w-16 sm:w-18' />
           </Link>
           <div>
           </div>
@@ -158,7 +158,7 @@ const Navbar = () => {
                   }}
                 >
                   <p>{category}</p>
-                  <hr className='w-3/4 border-none h-[2px] bg-black scale-0 transition-all duration-500 group-hover:scale-100' />
+                  <hr className='w-3/4 border-none h-[2px] bg-brand scale-0 transition-all duration-500 group-hover:scale-100' />
                 </NavLink>
                 {renderSubcategories(category)}
               </div>
@@ -169,16 +169,16 @@ const Navbar = () => {
             {/* Language toggle button */}
             <button 
               onClick={toggleLanguage}
-              className='px-2 py-1 text-sm border rounded hover:bg-gray-100'
+              className='px-2 py-1 text-sm border border-brand text-brand rounded hover:bg-brand hover:text-white transition-colors'
             >
               {i18n.language === 'en' ? 'FR' : 'EN'}
             </button>
 
             {/* pre-order button */}
-            <button className='w-40 h-8 hidden sm:block rounded-full bg-black text-white text-sm'>
+            <button className='w-40 h-8 hidden sm:block rounded-full bg-brand text-white text-sm hover:bg-brand-dark transition-colors'>
               <Link to="/collection?preorder=true">
                 <span>{t('preorder_now')}</span>
-                <MdOutlineArrowRightAlt className='inline-block ml-2 bg-white text-black rounded-full w-5 h-5' />
+                <MdOutlineArrowRightAlt className='inline-block ml-2 bg-white text-brand rounded-full w-5 h-5' />
               </Link>
             </button>
            
@@ -243,7 +243,7 @@ const Navbar = () => {
               <img src={assets.cart} alt='cartIcon' className='w-5 min-w-5 ' />
               <p
                 className='absolute -right-[5px] -bottom-[5px] w-4 text-center 
-                  leading-4 bg-black text-white  aspect-square rounded-full text-[10px]'
+                  leading-4 bg-brand text-white aspect-square rounded-full text-[10px]'
               >
                 {getCartCount()}
               </p>
@@ -267,22 +267,22 @@ const Navbar = () => {
         <div className='p-5'>
           <button
             onClick={() => setVisible(false)}
-            className='flex items-center justify-center text-black text-lg font-bold'
+            className='flex items-center justify-center text-brand text-lg font-bold'
           >
             <MdOutlineKeyboardBackspace className='size-6 mx-2'/> 
             <span>{t('go_back')}</span>
           </button>
           <ul className='mt-5 flex flex-col gap-4'>
-            <NavLink to='/' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-black'>
+            <NavLink to='/' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-brand'>
               {t('home')}
             </NavLink>
-            <NavLink to='/collection' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-black'>
+            <NavLink to='/collection' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-brand'>
               {t('collection')}
             </NavLink>
-            <NavLink to='/about' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-black'>
+            <NavLink to='/about' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-brand'>
               {t('about')}
             </NavLink>
-            <NavLink to='/contact' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-black'>
+            <NavLink to='/contact' onClick={() => setVisible(false)} className='py-2 pl-6 border-t hover:text-brand'>
               {t('contact')}
             </NavLink>
           </ul>

@@ -510,6 +510,7 @@ const Add = ({token}) => {
                               : currentSizes.filter(s => s.size !== size)
                             field.onChange(newSizes)
                           }}
+                          className="border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white"
                         />
                       </div>
                       {field.value?.some(s => s.size === size) && (
@@ -517,7 +518,7 @@ const Add = ({token}) => {
                           type="number"
                           min="0"
                           placeholder="Qty"
-                          className="w-full"
+                          className="w-full focus:border-brand focus:ring-brand/50"
                           value={field.value.find(s => s.size === size)?.quantity || 0}
                           onChange={(e) => {
                             const quantity = parseInt(e.target.value) || 0

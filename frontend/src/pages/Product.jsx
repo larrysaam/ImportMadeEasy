@@ -241,7 +241,7 @@ const Product = () => {
                 </span>
               )}
             </div>
-            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl'>{currency}{productData?.price}</p>
+            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency}{productData?.price}</p>
             <p className='mt-3 sm:mt-5 text-gray-500 text-sm sm:text-base'>{productData?.description}</p>
             
             {/* Color Selection */}
@@ -280,13 +280,16 @@ const Product = () => {
 
             {/* Size Selection */}
             {selectedColor && (
-              <div className='flex flex-col gap-3 sm:gap-4 my-6 sm:my-8'>
-                {/* <p className='font-medium'>
+              <div className='my-6 sm:my-8'>
+                <p className='mb-3 font-medium'>
                   Size: {selectedSize ? (
                     <span className='font-normal text-gray-600'>{selectedSize}</span>
                   ) : (
                     <span className='font-normal text-gray-400'>Please select a size</span>
                   )}
+                </p>
+                {/* <p className='text-xs text-gray-500 mb-3'>
+                  <span className='underline cursor-pointer'>Size Guide</span>
                 </p> */}
                 {currentSizes.length > 0 ? (
                   <ToggleGroup className='flex flex-wrap justify-start gap-2' type="single">
@@ -299,8 +302,8 @@ const Product = () => {
                           ${sizeObj.quantity === 0 
                             ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400' 
                             : selectedSize === sizeObj.size 
-                              ? 'bg-black text-white border-black' 
-                              : 'bg-white text-black border-gray-300 hover:border-black hover:bg-gray-50'
+                              ? 'bg-white text-black border-brand border-2' 
+                              : 'bg-white text-black border-gray-300 hover:border-brand hover:bg-gray-50'
                           }`}
                         onClick={() => sizeObj.quantity > 0 && handleSizeSelect(sizeObj.size)}
                       >
@@ -348,10 +351,10 @@ const Product = () => {
                   <button 
                     onClick={handlePreorder}
                     disabled={!selectedSize || !selectedColor || availableQuantity === 0}
-                    className={`w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
+                    className={`w-full sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
                       (!selectedSize || !selectedColor || availableQuantity === 0) 
                         ? 'opacity-50 cursor-not-allowed' 
-                        : 'hover:bg-blue-700 active:bg-blue-800'
+                        : 'hover:bg-brand-dark active:bg-brand-dark'
                     }`}
                   >
                     Preorder Now
@@ -361,10 +364,10 @@ const Product = () => {
                 <button 
                   onClick={handleAddToCart}
                   disabled={!selectedSize || !selectedColor || availableQuantity === 0}
-                  className={`w-full sm:w-auto bg-black text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
+                  className={`w-full sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
                     !selectedSize || !selectedColor || availableQuantity === 0 
                       ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:bg-gray-800 active:bg-gray-900'
+                      : 'hover:bg-brand-dark active:bg-brand-dark'
                   }`}
                 >
                   {!selectedColor ? 'Select Color & Size' : !selectedSize ? 'Select Size' : 'Add to Cart'}

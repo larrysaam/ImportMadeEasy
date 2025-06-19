@@ -200,7 +200,7 @@ const Placeorder = () => {
     <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col sm:flex-row justify-between lg:justify-evenly gap-4 pt-5 sm:pt-14 min-h-[70vh] border-t animate-fade animate-duration-500'>
 
       {/* Left Side - Form */}
-      <div className='flex flex-col gap-4 w-full sm:max-w-[480px]'>
+      <div className='flex flex-col gap-4 w-full sm:max-w-[480px] px-4 sm:px-14'>
         <div className='text-xl sm:text-2xl my-3'>
           <Title text1='DELIVERY' text2='INFORMATION' />
         </div>
@@ -272,7 +272,7 @@ const Placeorder = () => {
       </div>
 
       {/* Right Side - Cart + Payment */}
-      <div>
+      <div className='px-4 sm:px-14'>
         <div className='mt-8 min-w-80'>
           <CartTotal />
         </div>
@@ -343,10 +343,17 @@ const Placeorder = () => {
                 className={`px-16 py-3 text-sm transition-all duration-300 
                   ${createOrderMutation.isPending 
                     ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-black hover:bg-slate-700'} 
+                    : 'bg-brand hover:bg-brand-dark'} 
                   text-white`}
               >
-                {createOrderMutation.isPending ? ( <span className="flex items-center justify-center gap-2"> <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> PROCESSING... </span> ) : ( 'PLACE ORDER' )}
+                {createOrderMutation.isPending ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                    PROCESSING...
+                  </span>
+                ) : (
+                  'PLACE ORDER'
+                )}
               </button>
             </div>
           )}

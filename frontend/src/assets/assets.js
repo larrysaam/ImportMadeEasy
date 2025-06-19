@@ -33,7 +33,7 @@ import cross from './cross_icon.png'
 import check from './check.svg'
 import eyeIcon from './eye_icon.svg'
 import stripe from './stripe_logo.png'
-import KMlogo from './kmlogo.png'
+import IMELogo from './import.png'
 import Nike1 from './nike1.jpg'
 import Nike2 from './nike2.jpg'
 import Picks from './picks.png'
@@ -56,7 +56,7 @@ export const assets = {
     exchangeImg, qualityImg, supportImg,
     check, eyeIcon,
     stripe,
-    KMlogo,
+    IMELogo,
     Nike1, Nike2,
     Picks
 }

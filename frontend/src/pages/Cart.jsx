@@ -274,7 +274,7 @@ const Cart = () => {
                       </div>
                     )}
                     {/* Mobile price - only shows on mobile */}
-                    <p className='block sm:hidden text-sm font-medium'>
+                    <p className='block sm:hidden text-sm font-medium text-brand'>
                       <NumberFlow
                         value={productData.price * item.quantity} 
                         format={{ 
@@ -398,7 +398,7 @@ const Cart = () => {
 
                 {/* Desktop price - hidden on mobile */}
                 <NumberFlow
-                  className='hidden sm:block w-fit mx-auto'
+                  className='hidden sm:block w-fit mx-auto text-brand'
                   value={productData.price * item.quantity} 
                   format={{ 
                     style: 'currency', 
@@ -432,10 +432,10 @@ const Cart = () => {
             <button 
               onClick={() => (token ? navigate('/place-order') : navigate('/login', { state: { from: '/cart' } }))} 
               disabled={hasStockError}
-              className={`bg-black text-white text-sm my-8 px-4 py-3 transition-all duration-500 
+              className={`bg-brand text-white text-sm my-8 px-4 py-3 transition-all duration-500 
                 ${hasStockError 
                   ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:bg-slate-700'
+                  : 'hover:bg-brand-dark'
                 }`}
             >
               Proceed to checkout
@@ -467,7 +467,7 @@ const Cart = () => {
               <p className="text-sm font-medium  transition-colors">
                 {product.name}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-brand font-medium">
                 <NumberFlow
                   value={product.price}
                   format={{ 

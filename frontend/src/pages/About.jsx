@@ -12,7 +12,7 @@ const About = () => {
 
       <div className='my-10 flex flex-col md:flex-row gap-16'>
         <div className='md:flex-1' >
-          <img className='w-full aspect-square' src={assets.KMlogo} alt='about'/>
+          <img className='w-full aspect-square' src={assets.IMELogo} alt='about'/>
         </div>
 
         <div className='md:flex-1 flex flex-col justify-center gap-6 text-gray-600'>

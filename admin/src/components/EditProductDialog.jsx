@@ -406,6 +406,7 @@ const EditProductDialog = ({ product, isOpen, onClose, onUpdate, token }) => {
                                 : field.value.filter(s => s.size !== sizeOption);
                               field.onChange(newSizes);
                             }}
+                            className="border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white"
                           />
                         </div>
                         
@@ -422,7 +423,7 @@ const EditProductDialog = ({ product, isOpen, onClose, onUpdate, token }) => {
                                 );
                                 field.onChange(newSizes);
                               }}
-                              className="w-full"
+                              className="w-full focus:border-brand focus:ring-brand/50"
                               placeholder="Quantity"
                             />
                             <button

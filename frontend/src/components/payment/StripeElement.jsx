@@ -88,7 +88,7 @@ const StripeElement = ({ amount, orderData, onOrderComplete }) => {
         className={`w-full mt-4 px-16 py-3 text-sm transition-all duration-300 
           ${isProcessing || !stripe || !isComplete
             ? 'bg-gray-400 cursor-not-allowed' 
-            : 'bg-black hover:bg-slate-700'} 
+            : 'bg-brand hover:bg-brand-dark'} 
           text-white rounded-md`}
       >
         {isProcessing ? (
