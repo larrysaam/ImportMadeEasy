@@ -12,8 +12,8 @@ const Home = () => {
     <div className=' animate-fade animate-duration-500'>
       <Hero/>
       <NewLook/>
-      {/* <LatestCollection/> */}
-      {/* <Bestseller/> */}
+      <LatestCollection/>
+      <Bestseller/>
       <Picks/>
       <NewsletterBox/>
     </div>
