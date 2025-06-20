@@ -29,14 +29,14 @@ const Hero = () => {
 
   if (loading) {
     return (
-      <div className='relative w-full h-screen sm:h-[600px] lg:h-[700px] bg-gray-200 animate-pulse'>
+      <div className='relative w-full h-[90vh] sm:h-[550px] lg:h-[650px] bg-gray-200 animate-pulse'>
         {/* Loading state */}
       </div>
     )
   }
 
   return (
-    <div className='relative w-full h-screen sm:h-[600px] lg:h-[700px] overflow-hidden'>
+    <div className='relative w-full h-[90vh] sm:h-[550px] lg:h-[650px] overflow-hidden'>
       {/* Background Image */}
       <div className="w-full h-full overflow-hidden">
         <img
