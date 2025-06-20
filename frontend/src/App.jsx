@@ -20,6 +20,7 @@ import Signup from "@/pages/Signup";
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import OrderSuccess from '@/pages/OrderSuccess';
+import DeliveryOptions from '@/pages/DeliveryOptions';
 
 const App = () => {
   const { pathname } = useLocation();
@@ -48,6 +49,7 @@ const App = () => {
             <Route path='/orders' element={<Orders/>} />
             <Route path='/verify' element={<Verify/>} />
             <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/delivery-options" element={<DeliveryOptions />} />
             <Route path='*' element={<NotFound/>} />
           </Routes>
         <Footer/>
