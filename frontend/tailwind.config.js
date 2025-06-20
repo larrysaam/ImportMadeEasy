@@ -57,12 +57,17 @@ export default {
           DEFAULT: '#e14512',
           light: '#f46a3c',
           dark: '#c13a0f'
-        }
-  		}
+        },
+        transitionDuration: {
+          '2000': '2000ms',
+          '3000': '3000ms',
+          '5000': '5000ms',
+          '7000': '7000ms',
+        },
   	}
   },
   plugins: [
     require('tailwindcss-animated'),
 ],
-}
-
+},
+  }

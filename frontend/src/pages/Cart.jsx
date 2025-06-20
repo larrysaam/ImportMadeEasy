@@ -426,8 +426,23 @@ const Cart = () => {
 
 
       <div className='flex justify-end my-20'>
-        <div className='w-full sm:w-[450px]'>
-          <CartTotal/>
+        <div className='w-full sm:w-1/3 mt-8 sm:mt-0'>
+          <CartTotal />
+          
+          <div className='mt-4 p-4 bg-gray-50 rounded-md'>
+            <h3 className='font-medium mb-2 text-sm'>Delivery Details</h3>
+            <div className='flex flex-col gap-2 text-sm'>
+              <div className='flex justify-between'>
+                <p>Shipping Fee:</p>
+                <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || '€'}900</p>
+              </div>
+              <div className='flex justify-between'>
+                <p>Estimated Delivery Time:</p>
+                <p className='font-medium'>9 days</p>
+              </div>
+            </div>
+          </div>
+          
           <div className='w-full text-end'>
             <button 
               onClick={() => (token ? navigate('/place-order') : navigate('/login', { state: { from: '/cart' } }))} 

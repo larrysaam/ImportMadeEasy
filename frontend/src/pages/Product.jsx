@@ -210,7 +210,7 @@ const Product = () => {
                   onClick={() => setActiveImage(imgSrc)}
                   className={`w-[20%] sm:w-full sm:h-[80px] object-cover mb-0 sm:mb-2 flex-shrink-0 
                     cursor-pointer rounded-md transition-all duration-200 
-                    hover:opacity-80 hover:scale-105 ${activeImage === imgSrc ? 'border-2 border-black ring-2 ring-offset-1 ring-black' : 'border border-gray-200'}`}
+                    hover:opacity-80 hover:scale-105 ${activeImage === imgSrc ? 'border-2 border-brand ' : 'border border-gray-200'}`}
                 />
               ))}
             </div>
@@ -336,7 +336,21 @@ const Product = () => {
               </div>
             )}
 
-           
+            {/* Delivery Information */}
+            <div className='my-6 sm:my-8 p-4 bg-gray-50 rounded-md'>
+              <h3 className='font-medium mb-2'>Delivery Information</h3>
+              <div className='flex flex-col gap-2 text-sm'>
+                <div className='flex justify-between'>
+                  <p>Shipping Fee:</p>
+                  <p className='font-medium'>{currency}900</p>
+                </div>
+                <div className='flex justify-between'>
+                  <p>Estimated Delivery Time:</p>
+                  <p className='font-medium'>9 days</p>
+                </div>
+              </div>
+            </div>
+
             {/* Action Buttons */}
             <div className='w-full sm:w-auto fixed bottom-0 left-0 sm:relative p-4 sm:p-0 bg-white border-t sm:border-0 z-10'>
               {productData?.preorder ? (

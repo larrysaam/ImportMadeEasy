@@ -37,6 +37,9 @@ const { deliveryFee, getCartAmount } = useContext(ShopContext)
                     }} 
                 />            
             </div>
+            <div className='text-xs text-gray-500 flex justify-end'>
+                <p>Estimated delivery: 9 days</p>
+            </div>
             <hr/>
             <div className='text-lg flex justify-between'>
                 <b>Total</b>

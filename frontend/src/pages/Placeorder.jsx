@@ -275,6 +275,19 @@ const Placeorder = () => {
       <div className='px-4 sm:px-14'>
         <div className='mt-8 min-w-80'>
           <CartTotal />
+          <div className='mt-4 p-4 bg-gray-50 rounded-md'>
+            <h3 className='font-medium mb-2 text-sm'>Delivery Details</h3>
+            <div className='flex flex-col gap-2 text-sm'>
+              <div className='flex justify-between'>
+                <p>Shipping Fee:</p>
+                <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || '€'}900</p>
+              </div>
+              <div className='flex justify-between'>
+                <p>Estimated Delivery Time:</p>
+                <p className='font-medium'>9 days</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div className='mt-12'>
           <Title text1='PAYMENT' text2='METHOD' />
