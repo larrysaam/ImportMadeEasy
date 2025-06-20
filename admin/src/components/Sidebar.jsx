@@ -106,11 +106,12 @@ const Sidebar = () => {
 
           <NavLink 
             to='/messages' 
+            onClick={() => setIsOpen(false)}
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
           >
             {/* Use an appropriate icon, e.g., BsChatDots or assets.message_icon */}
             <BsChatDots size={18} /> 
-            <p className='hidden sm:block'>Messages</p>
+            <p className='block'>Messages</p>
           </NavLink>
 
           <NavLink 

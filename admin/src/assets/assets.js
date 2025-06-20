@@ -15,7 +15,7 @@ import uploadArea from './upload_area.png'
 import orderIcon from './order_icon.png'
 import addIcon from './add_icon.png'
 import parcelIcon from './parcel_icon.svg'
-import logo from './kmlogo.png'
+import logo from './import.png'
 
 
 export const assets = {
