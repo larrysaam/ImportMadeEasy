@@ -22,6 +22,7 @@ const validateColorData = (colors) => {
 // function for add products
 const addProduct = async (req, res) => {
   try {
+    console.log("Starting product addition process");
     const {
       name,
       description,
@@ -35,19 +36,29 @@ const addProduct = async (req, res) => {
       label
     } = req.body;
 
-    console.log("Received label value:", label, "Type:", typeof label);
-    console.log("Full request body:", req.body);
+    // Log the exact values received for bestseller and preorder
+    console.log("Received bestseller value:", bestseller, "Type:", typeof bestseller);
+    console.log("Received preorder value:", preorder, "Type:", typeof preorder);
+    
+    // Parse boolean values correctly - form data sends strings
+    const bestsellerBool = bestseller === 'true' || bestseller === true;
+    const preorderBool = preorder === 'true' || preorder === true;
+    
+    console.log("Parsed bestseller value:", bestsellerBool);
+    console.log("Parsed preorder value:", preorderBool);
 
-    // Validate required fields
-    if (!name || !description || !price || !category || !subcategory || !subsubcategory) {
+    // Validate required fields - only require category, make subcategory and subsubcategory optional
+    if (!name || !description || !price || !category) {
+      console.log("Missing required fields");
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: name, description, price, category, subcategory, subsubcategory'
+        message: 'Missing required fields: name, description, price, category'
       });
     }
 
     // Validate price
     if (isNaN(price) || price <= 0) {
+      console.log("Invalid price");
       return res.status(400).json({
         success: false,
         message: 'Price must be a positive number'
@@ -58,24 +69,33 @@ const addProduct = async (req, res) => {
     let colorData;
     try {
       colorData = typeof colors === 'string' ? JSON.parse(colors) : colors;
+      console.log("Parsed color data:", colorData);
     } catch (parseError) {
+      console.error("Error parsing colors:", parseError);
       return res.status(400).json({
         success: false,
         message: 'Invalid colors data format'
       });
     }
     
-    console.log("colorData: ", colorData);
-
     // Validate colors data
-    validateColorData(colorData);
+    try {
+      validateColorData(colorData);
+    } catch (validationError) {
+      console.error("Color validation error:", validationError);
+      return res.status(400).json({
+        success: false,
+        message: validationError.message || 'Invalid color data'
+      });
+    }
 
     // Handle main product images
     const mainImageUrls = [];
     const mainImageFiles = req.files ? req.files.filter(file => file.fieldname === 'image') : [];
-    console.log("main image: ", mainImageFiles);
+    console.log("Main image files:", mainImageFiles.length);
 
     if (mainImageFiles.length === 0) {
+      console.log("No main images found");
       return res.status(400).json({
         success: false,
         message: 'At least one main product image is required'
@@ -84,6 +104,7 @@ const addProduct = async (req, res) => {
 
     for (const file of mainImageFiles) {
       try {
+        console.log("Uploading main image:", file.originalname);
         const result = await cloudinary.uploader.upload(file.path);
         mainImageUrls.push(result.secure_url);
       } catch (uploadError) {
@@ -95,12 +116,15 @@ const addProduct = async (req, res) => {
       }
     }
 
+    console.log("Main images uploaded successfully:", mainImageUrls.length);
+
     // Handle color variant images
+    console.log("Processing color variants:", colorData.length);
     const processedColors = await Promise.all(colorData.map(async (color, index) => {
       const colorImages = [];
       const colorImageFiles = req.files ? req.files.filter(file => file.fieldname === `colorImages_${index}`) : [];
 
-      console.log("color image: ", colorImageFiles);
+      console.log(`Color ${index} (${color.colorName}) image files:`, colorImageFiles.length);
       
       for (const file of colorImageFiles) {
         try {
@@ -118,41 +142,59 @@ const addProduct = async (req, res) => {
       };
     }));
 
+    console.log("Color variants processed successfully");
+
     // Normalize label value - convert 'none' to empty string
     const normalizedLabel = (label === 'none' || !label) ? '' : label;
 
-    // Create new product
+    // Create new product with properly parsed boolean values
     const newProduct = new productModel({
       name: name.trim(),
       description: description.trim(),
       price: Number(price),
       image: mainImageUrls,
       category: category.trim(),
-      subcategory: subcategory.trim(),
-      subsubcategory: subsubcategory.trim(),
+      subcategory: subcategory ? subcategory.trim() : '',  // Default to empty string if not provided
+      subsubcategory: subsubcategory ? subsubcategory.trim() : '',  // Default to empty string if not provided
       colors: processedColors,
-      bestseller: Boolean(bestseller),
-      preorder: Boolean(preorder),
+      bestseller: bestsellerBool,  // Use parsed boolean
+      preorder: preorderBool,      // Use parsed boolean
       label: normalizedLabel,
       date: new Date()
     });
 
-    console.log("New product: ", newProduct);
-
-    // Save product
-    const savedProduct = await newProduct.save();
-
-    res.json({
-      success: true,
-      message: 'Product added successfully',
-      productId: savedProduct._id
+    console.log("New product object:", {
+      name: newProduct.name,
+      bestseller: newProduct.bestseller,
+      preorder: newProduct.preorder
     });
+
+    console.log("Saving product to database...");
+
+    // Save product with explicit error handling
+    try {
+      const savedProduct = await newProduct.save();
+      console.log("Product saved successfully:", savedProduct._id);
+      console.log("Saved product boolean values - bestseller:", savedProduct.bestseller, "preorder:", savedProduct.preorder);
+      
+      res.json({
+        success: true,
+        message: 'Product added successfully',
+        productId: savedProduct._id
+      });
+    } catch (saveError) {
+      console.error("Database save error:", saveError);
+      res.status(500).json({
+        success: false,
+        message: saveError.message || 'Failed to save product to database'
+      });
+    }
   } catch (error) {
-    console.error('Add product error:', error)
+    console.error('Add product error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to add product'
-    })
+    });
   }
 }
 
@@ -287,7 +329,18 @@ const updateProduct = async (req, res) => {
     const { id } = req.params;
     const updates = { ...req.body };
 
-    console.log('Received updates:', updates)
+    console.log('Received updates:', updates);
+    
+    // Handle boolean fields correctly
+    if (updates.bestseller !== undefined) {
+      updates.bestseller = updates.bestseller === 'true' || updates.bestseller === true;
+      console.log('Parsed bestseller value:', updates.bestseller);
+    }
+    
+    if (updates.preorder !== undefined) {
+      updates.preorder = updates.preorder === 'true' || updates.preorder === true;
+      console.log('Parsed preorder value:', updates.preorder);
+    }
 
     if (updates.colors) {
       let parsedColorsArray;
@@ -341,11 +394,17 @@ const updateProduct = async (req, res) => {
       updates.label = (updates.label === 'none' || !updates.label) ? '' : updates.label;
     }
 
+    // Ensure subcategory and subsubcategory have default values if not provided
+    if (!updates.subcategory) updates.subcategory = '';
+    if (!updates.subsubcategory) updates.subsubcategory = '';
+
     const product = await productModel.findByIdAndUpdate(
       id,
       updates,
       { new: true, runValidators: true }
     );
+
+    console.log('Updated product boolean values - bestseller:', product.bestseller, 'preorder:', product.preorder);
 
     if (!product) {
       return res.status(404).json({

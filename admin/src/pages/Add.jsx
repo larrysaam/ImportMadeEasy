@@ -150,6 +150,7 @@ const Add = ({token}) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingProduct, setIsLoadingProduct] = useState(false)
   const [categories, setCategories] = useState({})
+  const [submitError, setSubmitError] = useState(null);
 
   const { productId } = useParams()
   const navigate = useNavigate()
@@ -176,8 +177,8 @@ const Add = ({token}) => {
     description: z.string().min(2, {message: "Description is required"}),
     price: z.coerce.number().positive({message : "Please enter product price"}),
     category: z.string().min(1, {message: "Category is required"}),
-    subcategory: z.string().min(1, {message: "Subcategory is required"}),
-    subsubcategory: z.string().min(1, {message: "Second level category is required"}),
+    subcategory: z.string().optional(), // Make subcategory optional
+    subsubcategory: z.string().optional(), // Make subsubcategory optional
     bestseller: z.boolean(),
     preorder: z.boolean(),
     label: z.string(),
@@ -186,9 +187,37 @@ const Add = ({token}) => {
       .min(1, "At least one color variant is required"),
   })
 
-  const { control, handleSubmit, reset, watch, setValue, formState: { errors, isDirty } } = useForm({
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors, isDirty, isSubmitSuccessful } } = useForm({
     resolver: zodResolver(validationSchema),
     defaultValues: {
+      images: [],
+      name: "",
+      description: "",
+      price: "",
+      category: "",
+      subcategory: "",
+      subsubcategory: "",
+      bestseller: false,
+      preorder: false, // Explicitly set to false
+      label: "none",
+      sizeType: 'clothing',
+      colors: [],
+    },
+  })
+  
+  // Add this line to check if all category fields are selected
+  const canAddColors = Boolean(watch('category')) // Only require category
+
+  // Add useFieldArray hook for colors
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "colors"
+  })
+
+  // Add a more comprehensive resetForm function
+  const resetForm = () => {
+    // Clear all form fields
+    reset({
       images: [],
       name: "",
       description: "",
@@ -201,40 +230,47 @@ const Add = ({token}) => {
       label: "none",
       sizeType: 'clothing',
       colors: [],
-    },
-  })
-  
-  // Add this line to check if all category fields are selected
-  const canAddColors = Boolean(
-    watch('category') && 
-    watch('subcategory') && 
-    watch('subsubcategory')
-  )
-
-  // Add useFieldArray hook for colors
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "colors"
-  })
+    });
+    
+    // Clear color variants
+    while (fields.length > 0) {
+      remove(0);
+    }
+    
+    // Reset any other state variables
+    setIsSubmitting(false);
+    setSubmitError(null);
+    
+    // Reset available subcategories and subsubcategories
+    setAvailableSubcategories([]);
+    setAvailableSubSubcategories([]);
+  };
 
   const onSubmit = async (values) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
+    setSubmitError(null);
+    
     try {
-      const formData = new FormData()
+      const formData = new FormData();
 
-      // Add basic product info
+      // Add basic product info with explicit boolean conversion
       Object.keys(values).forEach(key => {
         if (!['images', 'colors'].includes(key)) {
-          formData.append(key, values[key])
+          if (key === 'bestseller' || key === 'preorder') {
+            // Explicitly convert boolean values to strings 'true' or 'false'
+            formData.append(key, values[key] === true ? 'true' : 'false');
+            console.log(`Appending ${key} as:`, values[key] === true ? 'true' : 'false');
+          } else {
+            formData.append(key, values[key]);
+          }
         }
-      })
+      });
 
       // Handle main product images
-      // Only append new File objects
       if (values.images && values.images.length > 0) {
         values.images.forEach((file) => {
           if (file instanceof File) {
-            formData.append('image', file)
+            formData.append('image', file);
           }
         });
       }
@@ -244,49 +280,44 @@ const Add = ({token}) => {
         colorName: color.colorName,
         colorHex: color.colorHex,
         sizes: color.sizes
-      }))
-      formData.append('colors', JSON.stringify(colorsData))
+      }));
+      formData.append('colors', JSON.stringify(colorsData));
 
       // Handle color images - append each color's images with color index
-      // Only append new File objects
       values.colors.forEach((color, colorIndex) => {
         if (color.colorImages && color.colorImages.length > 0) {
           color.colorImages.forEach((file) => {
             if (file instanceof File) {
-              formData.append(`colorImages_${colorIndex}`, file)
+              formData.append(`colorImages_${colorIndex}`, file);
             }
-          })
+          });
         }
-      })
+      });
 
-      let response;
-      if (isEditMode) {
-        response = await axios.put(`${backendUrl}/api/product/update/${productId}`, formData, {
-          headers: { token, 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        response = await axios.post(`${backendUrl}/api/product/add`, formData, {
-          headers: { token, 'Content-Type': 'multipart/form-data' }
-        });
-      }
+      console.log('Submitting form data with bestseller:', formData.get('bestseller'), 'preorder:', formData.get('preorder'));
+      
+      const response = await axios.post(`${backendUrl}/api/product/add`, formData, {
+        headers: { 
+          token,
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 30000 // Add a timeout of 30 seconds
+      });
+
+      console.log('Response received:', response.data);
 
       if (response.data.success) {
-        toast.success(isEditMode ? 'Product updated successfully!' : 'Product added successfully!')
-        if (!isEditMode) {
-          reset() // Reset form only if adding
-          // Clear color variants
-          while (fields.length > 0) {
-            remove(0)
-          }
-        } else {
-          navigate('/list') // Navigate back to list after editing
-        }
+        toast.success('Product added successfully!');
+        resetForm(); // Use the comprehensive resetForm function
+      } else {
+        toast.error(response.data.message || 'Failed to add product');
+        setIsSubmitting(false);
       }
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'adding'} product:`, error)
-      toast.error(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'add'} product`)
-    } finally {
-      setIsSubmitting(false)
+      console.error('Error adding product:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to add product');
+      setSubmitError(error.response?.data?.message || error.message || 'Failed to add product');
+      setIsSubmitting(false);
     }
   }
 
@@ -663,7 +694,6 @@ const Add = ({token}) => {
                       fetchSubSubcategories(category, value)
                     }
                   }}
-                  disabled={!watch('category') || availableSubcategories.length === 0}
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Choose..." />
@@ -692,7 +722,6 @@ const Add = ({token}) => {
                 <Select 
                   value={field.value || ""}
                   onValueChange={(value) => field.onChange(value)}
-                  disabled={!watch('subcategory') || availableSubSubcategories.length === 0}
                 >
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Choose..." />
@@ -781,16 +810,21 @@ const Add = ({token}) => {
           htmlFor="bestseller"
           className="cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
-          Add to bestseller
+          Set as bestseller
         </label>
         <Controller
           name="bestseller"
           control={control}
+          defaultValue={false}
           render={({ field }) => (
             <Checkbox 
               id="bestseller" 
-              checked={field.value}
-              onCheckedChange={(value) => field.onChange(value)}
+              checked={field.value === true}
+              onCheckedChange={(checked) => {
+                const boolValue = checked === true;
+                console.log("Setting bestseller to:", boolValue);
+                field.onChange(boolValue);
+              }}
             />
           )}
         />
@@ -806,11 +840,16 @@ const Add = ({token}) => {
         <Controller
           name="preorder"
           control={control}
+          defaultValue={false}
           render={({ field }) => (
             <Checkbox 
               id="preorder" 
-              checked={field.value}
-              onCheckedChange={(value) => field.onChange(value)}
+              checked={field.value === true}
+              onCheckedChange={(checked) => {
+                const boolValue = checked === true;
+                console.log("Setting preorder to:", boolValue);
+                field.onChange(boolValue);
+              }}
             />
           )}
         />
@@ -864,15 +903,30 @@ const Add = ({token}) => {
               control={control}
               remove={remove}
               watch={watch}
+              setValue={setValue}
               getSizeOptions={getSizeOptions}
             />
           ))}
         </div>
       )}
 
+      {submitError && (
+        <div className="mt-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+          <p className="font-medium">Error submitting form:</p>
+          <p>{submitError}</p>
+          <button 
+            type="button"
+            onClick={() => setSubmitError(null)}
+            className="mt-2 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <button 
         type='submit' 
-        disabled={isSubmitting || (isEditMode && !isDirty)}
+        disabled={isSubmitting}
         className={`group text-sm mt-4 cursor-pointer pl-5 pr-4 py-2 rounded-lg flex items-center
           ${isSubmitting 
             ? 'bg-gray-400 cursor-not-allowed' 
@@ -882,7 +936,7 @@ const Add = ({token}) => {
         {isSubmitting ? (
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {isEditMode ? 'Updating Product...' : 'Adding Product...'}
+            Adding Product...
           </span>
         ) : (
           <>

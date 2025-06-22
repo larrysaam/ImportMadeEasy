@@ -1,33 +1,26 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { orderSchema } from '@/lib/formSchemas'
+import { Input } from '@/components/ui/input'
 import Title from '@/components/Title'
 import CartTotal from '@/features/shared/CartTotal'
-import { assets } from '@/assets/assets'
 import { ShopContext } from '@/context/ShopContext'
+import { useMutation } from '@tanstack/react-query'
+import axios from 'axios'
 import { toast } from 'sonner'
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Input } from "@/components/ui/input"
-import { useMutation } from "@tanstack/react-query"
-import axios from "axios"
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-
-const orderSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email"),
-  street: z.string().min(1, "Street is required"),
-  city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
-  zipcode: z.string().min(1, "Zipcode is required"),
-  country: z.string().min(1, "Country is required"),
-  phone: z.string().min(1, "Phone number is required"),
-})
+import { assets } from '@/assets/assets'
+import { PaymentOperation } from '@hachther/mesomb';
 
 const Placeorder = () => {
-  const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-  const VITE_CURRENCY  =  import.meta.env.VITE_CURRENCY 
-  const [method, setMethod] = useState('cod')
+  const MESOMB_APP_KEY = import.meta.env.VITE_MESOMB_APP_KEY;
+  const MESOMB_ACCESS_KEY = import.meta.env.VITE_MESOMB_ACCESS_KEY;
+  const MESOMB_SECRET_KEY = import.meta.env.VITE_MESOMB_SECRET_KEY;
+  
+  const [mobileNumber, setMobileNumber] = useState('')
+  const [mobileService, setMobileService] = useState('MTN')
+  const [isProcessingMobile, setIsProcessingMobile] = useState(false)
+  
   const { navigate, backendUrl, token, cartItems,
     resetCart, getCartAmount, deliveryFee, products } = useContext(ShopContext)
 
@@ -44,52 +37,14 @@ const Placeorder = () => {
   },[])
 
 
-  const initialOptions = {
-    "client-id": PAYPAL_CLIENT_ID,
-    "enable-funding": "venmo",
-    "buyer-country": "US",
-    currency: VITE_CURRENCY || 'USD',
-    components: "buttons",
-  };
 
-
-
+  // Create order mutation
   const createOrderMutation = useMutation({
-    mutationFn: (orderData) => {
-      let endpoint = `${backendUrl}/api/order/place`; // Default to COD
-      if (method === 'stripe') {
-        endpoint = `${backendUrl}/api/order/create-checkout-session`;
-      } else if (method === 'paypal') {
-        endpoint = `${backendUrl}/api/order/place-paypal`; // New endpoint for PayPal
-      }
-      console.log('Creating order with method:', method)  
-      return axios.post(endpoint, orderData, { headers: { token } })
-    },
-    onSuccess: (res) => {
-      if (res.data.success) {
-        if (method === 'stripe') {
-          // Handle Stripe checkout redirect
-          const checkoutUrl = res.data.sessionUrl;
-          
-          // Create a flag in localStorage to track checkout status
-          localStorage.setItem('stripeCheckoutPending', 'true');
-          
-          // Redirect to Stripe Checkout
-          window.location.href = checkoutUrl;
-        } else {
-          // Handle COD or PayPal direct success (if PayPal order is created directly on backend)
-          resetCart();
-          toast.success('Order placed successfully!');
-          navigate('/');
-        }
-      } else {
-        toast.error(res.data.message);
-        navigate('/cart');
-      }
+    mutationFn: async (orderData) => {
+      return processMobilePayment();
     },
     onError: (error) => {
-      toast.error(error.message ||'Failed to process order');
-      navigate('/cart');
+      toast.error(error.response?.data?.message || 'Failed to place order');
     }
   });
 
@@ -101,7 +56,11 @@ const Placeorder = () => {
           const product = products.find(p => p._id === productId)
           if (product) {
             return {
-              ...product,
+              productId,
+              name: product.name,
+              price: product.price,
+              // Add a check to handle missing images
+              image: product.images && product.images.length > 0 ? product.images[0] : null,
               size,
               quantity
             }
@@ -111,25 +70,16 @@ const Placeorder = () => {
       }).filter(Boolean)
     )
 
-    const orderData = {
+    return {
       address: formData,
       items: orderItems,
       amount: getCartAmount() + deliveryFee,
-      paymentMethod: method
-    };
-    return orderData;
+      paymentMethod: 'mobile'
+    }
   }
 
   const onSubmit = (formData) => {
-    if (method === 'paypal') {
-      // For PayPal, we don't submit the form directly here.
-      // The PayPalButtons component will handle the order creation and approval.
-      // We just need to ensure form data is valid if PayPal is selected.
-      toast.info("Complete your payment with PayPal.");
-      return;
-    }
-    const orderPayload = prepareOrderData(formData);
-    createOrderMutation.mutate(orderPayload);
+    createOrderMutation.mutate(formData);
   };
 
 
@@ -195,6 +145,177 @@ const Placeorder = () => {
     }
   };
 
+  // Process Mobile Money Payment
+  const processMobilePayment = async () => {
+    try {
+      if (!mobileNumber) {
+        toast.error("Please enter your mobile number");
+        return;
+      }
+      
+      // Validate form data before proceeding
+      const formData = control._formValues;
+      const validationResult = orderSchema.safeParse(formData);
+      if (!validationResult.success) {
+        toast.error("Please fill in all required delivery information fields.");
+        handleSubmit(() => {})(); // This will show form errors
+        return;
+      }
+      
+      setIsProcessingMobile(true);
+      
+      // Format phone number (ensure it starts with 237 for Cameroon)
+      let formattedNumber = mobileNumber;
+      if (!formattedNumber.startsWith('237') && !formattedNumber.startsWith('+237')) {
+        formattedNumber = '237' + formattedNumber;
+      }
+      formattedNumber = formattedNumber.replace('+', '');
+      
+      // Calculate total amount in XAF (assuming store currency needs conversion)
+      const totalAmount = Math.round(getCartAmount() + deliveryFee);
+      
+      console.log("MeSomb API Keys:", {
+        appKey: MESOMB_APP_KEY ? "Set" : "Not set",
+        accessKey: MESOMB_ACCESS_KEY ? "Set" : "Not set",
+        secretKey: MESOMB_SECRET_KEY ? "Set" : "Not set"
+      });
+      
+      // Check if API keys are set
+      if (!MESOMB_APP_KEY || !MESOMB_ACCESS_KEY || !MESOMB_SECRET_KEY) {
+        toast.error("MeSomb API keys are not configured. Please contact the administrator.");
+        setIsProcessingMobile(false);
+        return;
+      }
+      
+      // For testing in development, simulate a successful payment
+      if (import.meta.env.DEV && import.meta.env.VITE_MOCK_PAYMENTS === 'true') {
+        console.log("Using mock payment in development mode");
+        
+        // Prepare order data for backend
+        const orderPayload = prepareOrderData(control._formValues);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Send order to backend with simulated transaction details
+        try {
+          const backendResponse = await axios.post(
+            `${backendUrl}/api/order/create-mobile-order`,
+            {
+              ...orderPayload,
+              paymentMethod: 'mobile',
+              transactionId: 'mock-' + Date.now(),
+              paymentDetails: {
+                service: mobileService,
+                phoneNumber: formattedNumber,
+                amount: totalAmount,
+                currency: 'XAF'
+              }
+            },
+            { headers: { token } }
+          );
+          
+          if (backendResponse.data.success) {
+            resetCart();
+            toast.success('Payment successful! Your order has been placed.');
+            navigate('/orders');
+          } else {
+            toast.error(backendResponse.data.message || 'Order creation failed. Please contact support.');
+          }
+        } catch (backendError) {
+          console.error('Backend error:', backendError);
+          toast.error('Failed to create order. Please try again.');
+        }
+        
+        setIsProcessingMobile(false);
+        return;
+      }
+      
+      // Initialize MeSomb client
+      const client = new PaymentOperation({
+        applicationKey: MESOMB_APP_KEY,
+        accessKey: MESOMB_ACCESS_KEY,
+        secretKey: MESOMB_SECRET_KEY
+      });
+      
+      // Prepare order data for backend
+      const orderPayload = prepareOrderData(control._formValues);
+      
+      console.log("Making MeSomb payment request with:", {
+        amount: totalAmount,
+        service: mobileService,
+        payer: formattedNumber,
+        country: 'CM',
+        currency: 'XAF'
+      });
+      
+      // Make payment request
+      try {
+        const response = await client.makeCollect({
+          amount: totalAmount,
+          service: mobileService,
+          payer: formattedNumber,
+          country: 'CM',
+          currency: 'XAF',
+          fees: false,
+          customer: {
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            address: formData.street,
+            city: formData.city,
+            region: formData.state,
+            country: formData.country
+          },
+          products: orderPayload.items.map(item => ({
+            name: item.name,
+            category: 'Clothing',
+            quantity: item.quantity,
+            amount: item.price * item.quantity
+          }))
+        });
+        
+        console.log("MeSomb response:", response);
+        
+        if (response.isOperationSuccess() && response.isTransactionSuccess()) {
+          // Send order to backend with transaction details
+          const backendResponse = await axios.post(
+            `${backendUrl}/api/order/create-mobile-order`,
+            {
+              ...orderPayload,
+              paymentMethod: 'mobile',
+              transactionId: response.transaction.id,
+              paymentDetails: {
+                service: mobileService,
+                phoneNumber: formattedNumber,
+                amount: totalAmount,
+                currency: 'XAF'
+              }
+            },
+            { headers: { token } }
+          );
+          
+          if (backendResponse.data.success) {
+            resetCart();
+            toast.success('Payment successful! Your order has been placed.');
+            navigate('/orders');
+          } else {
+            toast.error(backendResponse.data.message || 'Order creation failed. Please contact support.');
+          }
+        } else {
+          toast.error(response.message || 'Mobile money payment failed. Please try again.');
+        }
+      } catch (mesombError) {
+        console.error('MeSomb API error:', mesombError);
+        toast.error('Failed to connect to payment service. Please try again later or use another payment method.');
+      }
+    } catch (error) {
+      console.error('Mobile payment error:', error);
+      toast.error(error.response?.data?.message || 'Payment failed. Please try again or use another method.');
+    } finally {
+      setIsProcessingMobile(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col sm:flex-row justify-between lg:justify-evenly gap-4 pt-5 sm:pt-14 min-h-[70vh] border-t animate-fade animate-duration-500'>
@@ -289,90 +410,83 @@ const Placeorder = () => {
             </div>
           </div>
         </div>
-        <div className='mt-12'>
-          <Title text1='PAYMENT' text2='METHOD' />
-
-          <div className='flex gap-3 flex-col lg:flex-row'>
-            <div
-              onClick={() => setMethod('stripe')}
-              className={`flex-1 border p-4 cursor-pointer ${
-                method === 'stripe' ? 'border-black' : ''
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-3.5 h-3.5 border-2 rounded-full ${ method === 'stripe' ? 'bg-black border-black' : 'border-gray-400'}`} />
-                <p className='text-gray-700 text-sm font-medium'>Card Payment</p>
-                <img alt='' src={assets.stripe} className='h-5' />
+        <div className='mt-8'>
+          <h3 className='text-lg font-medium mb-4'>Payment Method</h3>
+          
+          {/* Mobile Money Payment Form */}
+          <div className="p-4 border border-gray-200 rounded-md bg-gray-50">
+            <div className="mb-4">
+              <p className="font-medium text-gray-800 mb-2">Mobile Money (Cameroon)</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setMobileService('MTN')}
+                  className={`flex-1 py-2 px-3 text-sm rounded-md border ${
+                    mobileService === 'MTN' 
+                      ? 'bg-yellow-500 text-white border-yellow-600' 
+                      : 'bg-white border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  MTN Mobile Money
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileService('ORANGE')}
+                  className={`flex-1 py-2 px-3 text-sm rounded-md border ${
+                    mobileService === 'ORANGE' 
+                      ? 'bg-orange-500 text-white border-orange-600' 
+                      : 'bg-white border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Orange Money
+                </button>
               </div>
             </div>
-
-            <div
-              onClick={() => setMethod('cod')}
-              className={`flex items-center gap-3 border p-4 cursor-pointer ${
-                method === 'cod' ? 'border-black' : ''
-              }`}
-            >
-              <div className={`w-3.5 h-3.5 border-2 rounded-full ${ method === 'cod' ? 'bg-black border-black' : 'border-gray-400'}`} />
-              <p className='text-gray-700 text-sm font-medium'>Cash on delivery</p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-sm">
+                  +237
+                </span>
+                <input
+                  type="tel"
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  placeholder="6XXXXXXXX"
+                  className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-md focus:ring-brand focus:border-brand text-sm"
+                  required
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">Enter your MTN or Orange mobile number</p>
             </div>
           </div>
           
-          {/* PayPal Option */}
-          <div 
-            onClick={() => setMethod('paypal')}
-            className={`border p-4 cursor-pointer mt-3 ${
-              method === 'paypal' ? 'border-black' : ''
+          <button
+            type="submit"
+            disabled={createOrderMutation.isPending || isProcessingMobile}
+            className={`w-full py-3 mt-4 rounded-md text-white text-sm font-medium transition-colors ${
+              createOrderMutation.isPending || isProcessingMobile
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-brand hover:bg-brand-dark'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`w-3.5 h-3.5 border-2 rounded-full ${ method === 'paypal' ? 'bg-black border-black' : 'border-gray-400'}`} />
-              <p className='text-gray-700 text-sm font-medium'>PayPal</p>
-              {/* You can add a PayPal logo asset here if you have one */}
-              {/* <img alt='PayPal' src={assets.paypalLogo} className='h-5' /> */}
-            </div>
+            {createOrderMutation.isPending || isProcessingMobile ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Processing Payment...
+              </span>
+            ) : (
+              'Place Order & Pay'
+            )}
+          </button>
+          
+          <div className="mt-3 text-xs text-gray-500">
+            <p>You will receive a prompt on your phone to confirm the payment.</p>
+            <p className="mt-1">By placing your order, you agree to our Terms of Service and Privacy Policy.</p>
           </div>
-
-          {method === 'paypal' && PAYPAL_CLIENT_ID && (
-            <div className="mt-6">
-              <PayPalScriptProvider options={initialOptions}>
-                <PayPalButtons
-                  style={{ layout: "vertical", color: "blue", shape: "rect", label: "paypal" }}
-                  createOrder={createOrder}
-                  onApprove={onApprove}
-                  onError={(err) => {
-                    toast.error("PayPal payment failed. Please try again or choose another method.");
-                    console.error("PayPal error:", err);
-                  }}
-                />
-              </PayPalScriptProvider>
-            </div>
-          )}
-
-          {method !== 'paypal' && (
-            <div className='w-full text-end mt-8'>
-              <button 
-                type='submit'
-                disabled={createOrderMutation.isPending}
-                className={`px-16 py-3 text-sm transition-all duration-300 
-                  ${createOrderMutation.isPending 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-brand hover:bg-brand-dark'} 
-                  text-white`}
-              >
-                {createOrderMutation.isPending ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                    PROCESSING...
-                  </span>
-                ) : (
-                  'PLACE ORDER'
-                )}
-              </button>
-            </div>
-          )}
         </div>
       </div>
-
     </form>
   )
 }

@@ -46,14 +46,18 @@ const productSchema = new Schema({
     price: { type: Number, required: true },
     image: { type: Array, required: true }, // Keep main product images
     category: { type: String, required: true },
-    subcategory: { type: String, required: true },
-    subsubcategory: { type: String, required: true },
+    subcategory: { type: String, default: '' }, // Make optional with default empty string
+    subsubcategory: { type: String, default: '' }, // Make optional with default empty string
     colors: {
       type: [colorVariantSchema],
       required: true,
       validate: [arr => arr.length > 0, 'At least one color variant is required']
     },
-    bestseller: { type: Boolean },
+    bestseller: { 
+      type: Boolean, 
+      default: false,
+      required: true
+    },
     date: {
       type: Date,
       required: true,
@@ -61,7 +65,8 @@ const productSchema = new Schema({
     },
     preorder: {
       type: Boolean,
-      default: false
+      default: false,
+      required: true
     },
     label: {
       type: String,
