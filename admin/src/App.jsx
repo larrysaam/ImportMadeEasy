@@ -36,7 +36,7 @@ const App = () => {
               <Navbar setToken={setToken}/>
               <hr />
               <div className='flex w-full'>
-                <Sidebar />
+                <Sidebar setToken={setToken} />
                 <div className='w-[90%] sm:w-[70%] mx-auto ml-[max(5vw, 25px)] my-8 text-gray-600 text-base'>
                   <Routes>
                     <Route path='/settings' element={<Settings token={token} />} />

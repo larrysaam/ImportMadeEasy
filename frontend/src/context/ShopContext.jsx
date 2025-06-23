@@ -149,27 +149,51 @@ const ShopContextProvider = (props) => {
 
   const updateQuantity = (productId, cartKey, quantity, newCartItems = null) => {
     setCartItems(prev => {
+      // If a complete cart object is provided, use it directly
       if (newCartItems) {
-        return newCartItems
+        return newCartItems;
       }
-      const updated = {
-        ...prev,
-        [productId]: {
-          ...prev[productId],
-          [cartKey]: quantity
-        }
+      
+      // Create a deep copy of the previous cart state
+      const updated = JSON.parse(JSON.stringify(prev));
+      
+      // If the product doesn't exist in the cart, initialize it
+      if (!updated[productId]) {
+        updated[productId] = {};
       }
       
       if (quantity === 0) {
-        delete updated[productId][cartKey];
-        if (Object.keys(updated[productId]).length === 0) {
-          delete updated[productId];
+        // Remove the specific size/color variant
+        if (updated[productId][cartKey] !== undefined) {
+          delete updated[productId][cartKey];
+          
+          // If no more variants for this product, remove the product entirely
+          if (Object.keys(updated[productId]).length === 0) {
+            delete updated[productId];
+          }
         }
+      } else {
+        // Update the quantity for this specific variant
+        updated[productId][cartKey] = quantity;
       }
       
       return updated;
-    })
-  }
+    });
+    
+    // If we're removing an item, also update the server
+    if (quantity === 0 && token) {
+      // Parse the cartKey to extract size and color
+      const [size, color] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, undefined];
+      
+      // Call the update mutation
+      updateQuantityMutation.mutate({
+        itemId: productId,
+        size: size,
+        quantity: 0,
+        color: color
+      });
+    }
+  };
 
   // Reset cart (e.g., after purchase)
   const resetCart = () => {

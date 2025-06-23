@@ -73,6 +73,15 @@ const productSchema = new Schema({
       enum: ['New model', 'Limited Edition', ''],
       default: ''
     },
+    hasSizes: {
+      type: Boolean,
+      default: true
+    },
+    sizeType: {
+      type: String,
+      enum: ['clothing', 'shoes'],
+      default: 'clothing'
+    },
     reviews: [{
       userId: {
         type: mongoose.Schema.Types.ObjectId,

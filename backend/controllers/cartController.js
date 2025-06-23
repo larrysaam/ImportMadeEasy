@@ -107,34 +107,6 @@ const updateCart = async (req,res) => {
             return res.json({success: false, message: 'Missing required fields: userId, itemId, size, quantity'});
         }
 
-        // Validate stock if quantity > 0
-        if (quantity > 0) {
-            const product = await productModel.findById(itemId);
-            if (!product) {
-                return res.json({success: false, message: 'Product not found'});
-            }
-
-            // Check stock availability for color/size combination
-            if (color) {
-                const colorData = product.colors.find(c => c.colorHex === color);
-                if (!colorData) {
-                    return res.json({success: false, message: 'Color not found'});
-                }
-                
-                const sizeData = colorData.sizes.find(s => s.size === size);
-                if (!sizeData) {
-                    return res.json({success: false, message: 'Size not available for this color'});
-                }
-                
-                if (quantity > sizeData.quantity) {
-                    return res.json({
-                        success: false, 
-                        message: `Only ${sizeData.quantity} items available in stock`
-                    });
-                }
-            }
-        }
-
         // Find user and validate
         const userData = await userModel.findById(userId);
         if (!userData) {
@@ -160,6 +132,32 @@ const updateCart = async (req,res) => {
                 }
             }
         } else {
+            // Validate stock if quantity > 0
+            const product = await productModel.findById(itemId);
+            if (!product) {
+                return res.json({success: false, message: 'Product not found'});
+            }
+
+            // Check stock availability for color/size combination
+            if (color) {
+                const colorData = product.colors.find(c => c.colorHex === color);
+                if (!colorData) {
+                    return res.json({success: false, message: 'Color not found'});
+                }
+                
+                const sizeData = colorData.sizes.find(s => s.size === size);
+                if (!sizeData) {
+                    return res.json({success: false, message: 'Size not available for this color'});
+                }
+                
+                if (quantity > sizeData.quantity) {
+                    return res.json({
+                        success: false, 
+                        message: `Only ${sizeData.quantity} items available in stock`
+                    });
+                }
+            }
+            
             // Update quantity
             if (!cartData[itemId]) {
                 cartData[itemId] = {};
@@ -167,17 +165,14 @@ const updateCart = async (req,res) => {
             cartData[itemId][cartKey] = quantity;
         }
 
-        console.log('Updated cart data:', cartData);
-
-        // Save updated cart data with proper options
+        // Update user cart in database
         const updatedUser = await userModel.findByIdAndUpdate(
             userId, 
-            { $set: { cartData: cartData } }, 
+            { $set: { cartData } }, 
             { 
                 new: true, 
                 runValidators: false,
-                strict: false, // Allow updating cartData object
-                upsert: false
+                strict: false
             }
         );
 
@@ -186,10 +181,12 @@ const updateCart = async (req,res) => {
             return res.json({success: false, message: 'Failed to update cart'});
         }
 
-        console.log('Cart updated successfully for user:', updatedUser.name);
-        console.log('Final cart data in database:', updatedUser.cartData);
-        res.json({success: true, message: 'Cart updated'});
-
+        console.log('Updated cart data:', updatedUser.cartData);
+        res.json({
+            success: true, 
+            message: quantity === 0 ? 'Item removed from cart' : 'Cart updated',
+            cartData: updatedUser.cartData
+        });
     } catch (error) {
         console.error('Update cart error:', error);
         res.json({success: false, message: error.message});

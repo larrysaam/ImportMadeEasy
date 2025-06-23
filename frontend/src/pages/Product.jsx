@@ -55,9 +55,10 @@ const Product = () => {
   // Update active image when color changes
   useEffect(() => {
     if (selectedColor && selectedColor.colorImages && selectedColor.colorImages.length > 0) {
+      // Set the active image to the first image of the selected color
       setActiveImage(selectedColor.colorImages[0]);
     } else if (productData?.image && productData.image.length > 0) {
-      // Fallback to main product images if no color selected
+      // Fallback to main product images if no color selected or color has no images
       setActiveImage(productData.image[0]);
     }
     // Reset size when color changes
@@ -66,30 +67,62 @@ const Product = () => {
 
   // Get current images for gallery (color images or main images)
   const currentImages = useMemo(() => {
+    // If a color is selected and it has images, use those
     if (selectedColor && selectedColor.colorImages && selectedColor.colorImages.length > 0) {
       return selectedColor.colorImages;
     }
+    // Otherwise fall back to the main product images
     return productData?.image || [];
   }, [selectedColor, productData]);
 
-  // Get current sizes for the selected color
+  // Get current sizes for the selected color, filtering out 'N/A' sizes
   const currentSizes = useMemo(() => {
     if (selectedColor && selectedColor.sizes && selectedColor.sizes.length > 0) {
-      return selectedColor.sizes;
+      // Filter out 'N/A' sizes as these products don't have real sizes
+      return selectedColor.sizes.filter(size => size.size !== 'N/A');
     }
     return [];
   }, [selectedColor]);
 
-  // Get available quantity for selected size
+  // Check if this product has sizes or is a no-size product (uses N/A)
+  const hasRealSizes = useMemo(() => {
+    if (!selectedColor || !selectedColor.sizes || selectedColor.sizes.length === 0) {
+      return false;
+    }
+    // If the only size is 'N/A', then this product doesn't have real sizes
+    return !(selectedColor.sizes.length === 1 && selectedColor.sizes[0].size === 'N/A');
+  }, [selectedColor]);
+
+  // Get available quantity for selected size or N/A size for products without sizes
   const availableQuantity = useMemo(() => {
-    if (!selectedSize || !selectedColor) return 0;
+    if (!selectedColor) return 0;
+
+    // For products without real sizes (only N/A), get quantity from N/A size
+    if (!hasRealSizes) {
+      const naSize = selectedColor.sizes?.find(s => s.size === 'N/A');
+      return naSize?.quantity || 0;
+    }
+
+    // For products with real sizes, require a selected size
+    if (!selectedSize) return 0;
     const sizeObj = selectedColor.sizes?.find(s => s.size === selectedSize);
     return sizeObj?.quantity || 0;
-  }, [selectedSize, selectedColor]);
+  }, [selectedSize, selectedColor, hasRealSizes]);
 
   const handleColorSelect = (color) => {
     setSelectedColor(color);
-    // Size will be reset by useEffect
+    // If the color has images, set the active image to the first one
+    if (color.colorImages && color.colorImages.length > 0) {
+      setActiveImage(color.colorImages[0]);
+    }
+
+    // For products without real sizes (only N/A), automatically set size to N/A
+    if (color.sizes && color.sizes.length === 1 && color.sizes[0].size === 'N/A') {
+      setSelectedSize('N/A');
+    } else {
+      // Reset size for products with real sizes
+      setSelectedSize('');
+    }
   };
 
   const handleSizeSelect = (size) => {
@@ -102,13 +135,14 @@ const Product = () => {
       return
     }
 
-    if (!selectedSize) {
-      toast.error('Please select a size')
+    if (!selectedColor) {
+      toast.error('Please select a color')
       return
     }
 
-    if (!selectedColor) {
-      toast.error('Please select a color')
+    // Only check for size selection if the product has real sizes
+    if (hasRealSizes && !selectedSize) {
+      toast.error('Please select a size')
       return
     }
 
@@ -128,7 +162,7 @@ const Product = () => {
       const preorderItem = {
         productId: productData._id,
         name: productData.name,
-        size: selectedSize,
+        size: hasRealSizes ? selectedSize : 'N/A',
         quantity: 1,
         price: productData.price,
         image: activeImage,
@@ -169,18 +203,27 @@ const Product = () => {
       navigate('/login')
       return
     }
-    if (!selectedSize) {
-      toast.error('Please select a size')
-      return
-    }
+
     if (!selectedColor) {
       toast.error('Please select a color')
       return
     }
-    
+
+    // Only check for size selection if the product has real sizes
+    if (hasRealSizes && !selectedSize) {
+      toast.error('Please select a size')
+      return
+    }
+
+    // Use 'N/A' for products without sizes, otherwise use selected size
+    const sizeToAdd = hasRealSizes ? selectedSize : 'N/A';
+
     // Pass color hex code to cart
-    addToCart(productData?._id, selectedSize, selectedColor?.colorHex);
-    toast.success(`${productData?.name} (${selectedColor?.colorName}, ${selectedSize}) added to cart!`);
+    addToCart(productData?._id, sizeToAdd, selectedColor?.colorHex);
+
+    // Create appropriate success message
+    const sizeText = hasRealSizes ? `, ${selectedSize}` : '';
+    toast.success(`${productData?.name} (${selectedColor?.colorName}${sizeText}) added to cart!`);
   }
 
   if (isLoading) {
@@ -222,6 +265,16 @@ const Product = () => {
                 className='w-full h-full object-cover rounded-md' 
                 alt={`${productData?.name} - ${selectedColor?.colorName || 'main'}`}
               />
+              {/* Add a small indicator showing this is a color-specific image */}
+              {selectedColor && selectedColor.colorImages && selectedColor.colorImages.includes(activeImage) && (
+                <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: selectedColor.colorHex }}
+                  ></div>
+                  <span>Showing {selectedColor.colorName} color variant</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -258,10 +311,10 @@ const Product = () => {
                   {productData.colors.map((color, index) => (
                     <button
                       key={index}
-                      title={color.colorName}
+                      title={`${color.colorName}${color.colorImages && color.colorImages.length > 0 ? ' (has custom images)' : ''}`}
                       onClick={() => handleColorSelect(color)}
                       className={`relative w-10 h-10 rounded-md border-none transition-all duration-200
-                       
+                        ${color.colorImages && color.colorImages.length > 0 ? 'ring-1 ring-gray-300' : ''}
                         hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black`}
                       style={{ backgroundColor: color.colorHex }}
                     >
@@ -272,14 +325,18 @@ const Product = () => {
                           </svg>
                         </div>
                       )}
+                      {/* Small indicator for colors with images */}
+                      {color.colorImages && color.colorImages.length > 0 && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full"></div>
+                      )}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Size Selection */}
-            {selectedColor && (
+            {/* Size Selection - Only show for products with real sizes */}
+            {selectedColor && hasRealSizes && (
               <div className='my-6 sm:my-8'>
                 <p className='mb-3 font-medium'>
                   Size: {selectedSize ? (
@@ -299,10 +356,10 @@ const Product = () => {
                         value={sizeObj.size}
                         disabled={sizeObj.quantity === 0}
                         className={`text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-3 transition-all duration-200 border rounded-md
-                          ${sizeObj.quantity === 0 
-                            ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400' 
-                            : selectedSize === sizeObj.size 
-                              ? 'bg-white text-black border-brand border-2' 
+                          ${sizeObj.quantity === 0
+                            ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400'
+                            : selectedSize === sizeObj.size
+                              ? 'bg-white text-black border-brand border-2'
                               : 'bg-white text-black border-gray-300 hover:border-brand hover:bg-gray-50'
                           }`}
                         onClick={() => sizeObj.quantity > 0 && handleSizeSelect(sizeObj.size)}
@@ -319,7 +376,7 @@ const Product = () => {
                 ) : (
                   <p className="text-gray-500 text-sm">No sizes available for this color</p>
                 )}
-                
+
                 {/* Stock indicator */}
                 {/* {selectedSize && availableQuantity > 0 && (
                   <p className="text-sm text-green-600">
@@ -332,7 +389,9 @@ const Product = () => {
             {/* Selection prompt when no color is selected */}
             {!selectedColor && productData?.colors && productData.colors.length > 0 && (
               <div className='my-6 sm:my-8 p-4 bg-gray-50 rounded-md'>
-                <p className='text-gray-600 text-center'>Please select a color to see available sizes</p>
+                <p className='text-gray-600 text-center'>
+                  {hasRealSizes ? 'Please select a color to see available sizes' : 'Please select a color'}
+                </p>
               </div>
             )}
 
@@ -362,12 +421,12 @@ const Product = () => {
                     Preordered
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={handlePreorder}
-                    disabled={!selectedSize || !selectedColor || availableQuantity === 0}
+                    disabled={!selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)}
                     className={`w-full sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
-                      (!selectedSize || !selectedColor || availableQuantity === 0) 
-                        ? 'opacity-50 cursor-not-allowed' 
+                      (!selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize))
+                        ? 'opacity-50 cursor-not-allowed'
                         : 'hover:bg-brand-dark active:bg-brand-dark'
                     }`}
                   >
@@ -375,16 +434,16 @@ const Product = () => {
                   </button>
                 )
               ) : (
-                <button 
+                <button
                   onClick={handleAddToCart}
-                  disabled={!selectedSize || !selectedColor || availableQuantity === 0}
+                  disabled={!selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)}
                   className={`w-full sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
-                    !selectedSize || !selectedColor || availableQuantity === 0 
-                      ? 'opacity-50 cursor-not-allowed' 
+                    !selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)
+                      ? 'opacity-50 cursor-not-allowed'
                       : 'hover:bg-brand-dark active:bg-brand-dark'
                   }`}
                 >
-                  {!selectedColor ? 'Select Color & Size' : !selectedSize ? 'Select Size' : 'Add to Cart'}
+                  {!selectedColor ? (hasRealSizes ? 'Select Color & Size' : 'Select Color') : (hasRealSizes && !selectedSize) ? 'Select Size' : 'Add to Cart'}
                 </button>
               )}
             </div>

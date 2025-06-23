@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { BsGrid,  } from 'react-icons/bs'
-import {  
+import {
   BsChatDots // Example icon for messages
 } from 'react-icons/bs'
 import { HiMenuAlt3 } from 'react-icons/hi'
@@ -9,12 +9,19 @@ import { IoMdClose } from 'react-icons/io'
 import { assets } from '../assets/assets'
 import { IoSettings } from "react-icons/io5";
 import { MdLibraryAddCheck } from "react-icons/md";
+import { toast } from "sonner";
 
-const Sidebar = () => {
+const Sidebar = ({ setToken }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen)
+  }
+
+  const logout = () => {
+    localStorage.removeItem('token')
+    setToken('')
+    toast.success('Successfully logged out')
   }
 
   return (
@@ -123,8 +130,8 @@ const Sidebar = () => {
             <p className='block'>Settings</p>
           </NavLink>
 
-           <button 
-                onClick={()=>setToken('')}
+           <button
+                onClick={logout}
                 className='cursor-pointer bg-gray-700 hover:bg-gray-900 text-white px-5 py-2 sm:px-7 sm:py-3 rounded-lg text-xs sm:text-sm'>
                     Logout
             </button>

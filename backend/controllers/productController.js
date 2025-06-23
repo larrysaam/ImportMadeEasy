@@ -13,8 +13,27 @@ const validateColorData = (colors) => {
   }
 
   colors.forEach(color => {
-    if (!color.colorName || !color.colorHex || !color.sizes) {
-      throw new Error('Each color must have a name, hex value, and sizes');
+    if (!color.colorName || !color.colorHex) {
+      throw new Error('Each color must have a name and hex value');
+    }
+
+    // Validate sizes array exists and has proper structure
+    if (!Array.isArray(color.sizes)) {
+      throw new Error('Each color must have a sizes array');
+    }
+
+    // For products without sizes, there should be exactly one 'N/A' size entry
+    if (color.sizes.length === 1 && color.sizes[0].size === 'N/A') {
+      if (typeof color.sizes[0].quantity !== 'number' || color.sizes[0].quantity < 0) {
+        throw new Error('N/A size must have a valid quantity');
+      }
+    } else if (color.sizes.length > 0) {
+      // For products with sizes, validate each size entry
+      color.sizes.forEach(size => {
+        if (!size.size || typeof size.quantity !== 'number' || size.quantity < 0) {
+          throw new Error('Each size must have a valid size name and quantity');
+        }
+      });
     }
   });
 };
@@ -33,107 +52,45 @@ const addProduct = async (req, res) => {
       colors,
       bestseller,
       preorder,
-      label
+      label,
+      hasSizes,
+      sizeType
     } = req.body;
 
-    // Log the exact values received for bestseller and preorder
-    console.log("Received bestseller value:", bestseller, "Type:", typeof bestseller);
-    console.log("Received preorder value:", preorder, "Type:", typeof preorder);
-    
-    // Parse boolean values correctly - form data sends strings
+    // Convert string boolean values to actual booleans
     const bestsellerBool = bestseller === 'true' || bestseller === true;
     const preorderBool = preorder === 'true' || preorder === true;
-    
-    console.log("Parsed bestseller value:", bestsellerBool);
-    console.log("Parsed preorder value:", preorderBool);
 
-    // Validate required fields - only require category, make subcategory and subsubcategory optional
-    if (!name || !description || !price || !category) {
-      console.log("Missing required fields");
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: name, description, price, category'
-      });
-    }
-
-    // Validate price
-    if (isNaN(price) || price <= 0) {
-      console.log("Invalid price");
-      return res.status(400).json({
-        success: false,
-        message: 'Price must be a positive number'
-      });
-    }
+    console.log("Received boolean values - bestseller:", bestseller, "preorder:", preorder);
+    console.log("Converted to - bestseller:", bestsellerBool, "preorder:", preorderBool);
 
     // Parse colors data from JSON string if needed
-    let colorData;
-    try {
-      colorData = typeof colors === 'string' ? JSON.parse(colors) : colors;
-      console.log("Parsed color data:", colorData);
-    } catch (parseError) {
-      console.error("Error parsing colors:", parseError);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid colors data format'
-      });
-    }
-    
+    const colorData = typeof colors === 'string' ? JSON.parse(colors) : colors;
+
     // Validate colors data
-    try {
-      validateColorData(colorData);
-    } catch (validationError) {
-      console.error("Color validation error:", validationError);
-      return res.status(400).json({
-        success: false,
-        message: validationError.message || 'Invalid color data'
-      });
-    }
+    validateColorData(colorData);
 
     // Handle main product images
     const mainImageUrls = [];
-    const mainImageFiles = req.files ? req.files.filter(file => file.fieldname === 'image') : [];
-    console.log("Main image files:", mainImageFiles.length);
+    const mainImageFiles = req.files.filter(file => file.fieldname === 'image');
 
-    if (mainImageFiles.length === 0) {
-      console.log("No main images found");
-      return res.status(400).json({
-        success: false,
-        message: 'At least one main product image is required'
-      });
-    }
+    console.log("Main image files: ", mainImageFiles.length);
 
     for (const file of mainImageFiles) {
-      try {
-        console.log("Uploading main image:", file.originalname);
-        const result = await cloudinary.uploader.upload(file.path);
-        mainImageUrls.push(result.secure_url);
-      } catch (uploadError) {
-        console.error('Image upload error:', uploadError);
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to upload product image'
-        });
-      }
+      const result = await cloudinary.uploader.upload(file.path);
+      mainImageUrls.push(result.secure_url);
     }
 
-    console.log("Main images uploaded successfully:", mainImageUrls.length);
-
     // Handle color variant images
-    console.log("Processing color variants:", colorData.length);
     const processedColors = await Promise.all(colorData.map(async (color, index) => {
       const colorImages = [];
-      const colorImageFiles = req.files ? req.files.filter(file => file.fieldname === `colorImages_${index}`) : [];
+      const colorImageFiles = req.files.filter(file => file.fieldname === `colorImages_${index}`);
 
-      console.log(`Color ${index} (${color.colorName}) image files:`, colorImageFiles.length);
+      console.log(`Color ${index} image files: `, colorImageFiles.length);
       
       for (const file of colorImageFiles) {
-        try {
-          const result = await cloudinary.uploader.upload(file.path);
-          colorImages.push(result.secure_url);
-        } catch (uploadError) {
-          console.error('Color image upload error:', uploadError);
-          // Continue with other images instead of failing completely
-        }
+        const result = await cloudinary.uploader.upload(file.path);
+        colorImages.push(result.secure_url);
       }
 
       return {
@@ -142,31 +99,22 @@ const addProduct = async (req, res) => {
       };
     }));
 
-    console.log("Color variants processed successfully");
-
-    // Normalize label value - convert 'none' to empty string
-    const normalizedLabel = (label === 'none' || !label) ? '' : label;
-
-    // Create new product with properly parsed boolean values
+    // Create new product with explicit boolean values
     const newProduct = new productModel({
-      name: name.trim(),
-      description: description.trim(),
-      price: Number(price),
+      name,
+      description,
+      price,
       image: mainImageUrls,
-      category: category.trim(),
-      subcategory: subcategory ? subcategory.trim() : '',  // Default to empty string if not provided
-      subsubcategory: subsubcategory ? subsubcategory.trim() : '',  // Default to empty string if not provided
+      category,
+      subcategory,
+      subsubcategory,
       colors: processedColors,
-      bestseller: bestsellerBool,  // Use parsed boolean
-      preorder: preorderBool,      // Use parsed boolean
-      label: normalizedLabel,
+      bestseller: bestsellerBool,
+      preorder: preorderBool,
+      label: (label === 'none' || !label) ? '' : label,
+      hasSizes: hasSizes === 'true' || hasSizes === true,
+      sizeType: sizeType || 'clothing',
       date: new Date()
-    });
-
-    console.log("New product object:", {
-      name: newProduct.name,
-      bestseller: newProduct.bestseller,
-      preorder: newProduct.preorder
     });
 
     console.log("Saving product to database...");
@@ -342,6 +290,11 @@ const updateProduct = async (req, res) => {
       console.log('Parsed preorder value:', updates.preorder);
     }
 
+    if (updates.hasSizes !== undefined) {
+      updates.hasSizes = updates.hasSizes === 'true' || updates.hasSizes === true;
+      console.log('Parsed hasSizes value:', updates.hasSizes);
+    }
+
     if (updates.colors) {
       let parsedColorsArray;
       if (typeof updates.colors === 'string') {
@@ -456,15 +409,27 @@ const updateQuantity = async (req, res) => {
       })
     }
 
-    const sizeIndex = product.colors[colorIndex].sizes.findIndex(s => s.size === size)
+    // Handle both regular sizes and 'N/A' size for products without sizes
+    const targetSize = size || 'N/A' // Default to 'N/A' if no size provided
+    const sizeIndex = product.colors[colorIndex].sizes.findIndex(s => s.size === targetSize)
+
     if (sizeIndex === -1) {
-      return res.status(400).json({
-        success: false,
-        message: 'Size not found for this color'
-      })
+      // If 'N/A' size doesn't exist for products without sizes, create it
+      if (targetSize === 'N/A') {
+        product.colors[colorIndex].sizes.push({
+          size: 'N/A',
+          quantity: quantity
+        })
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Size not found for this color'
+        })
+      }
+    } else {
+      product.colors[colorIndex].sizes[sizeIndex].quantity = quantity
     }
 
-    product.colors[colorIndex].sizes[sizeIndex].quantity = quantity
     await product.save()
 
     res.json({
