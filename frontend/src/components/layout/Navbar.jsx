@@ -175,12 +175,12 @@ const Navbar = () => {
             </button>
 
             {/* pre-order button */}
-            <button className='w-40 h-8 hidden sm:block rounded-full bg-brand text-white text-sm hover:bg-brand-dark transition-colors'>
+            {/* <button className='w-40 h-8 hidden sm:block rounded-full bg-brand text-white text-sm hover:bg-brand-dark transition-colors'>
               <Link to="/collection?preorder=true">
                 <span>{t('preorder_now')}</span>
                 <MdOutlineArrowRightAlt className='inline-block ml-2 bg-white text-brand rounded-full w-5 h-5' />
               </Link>
-            </button>
+            </button> */}
            
 
             <img
