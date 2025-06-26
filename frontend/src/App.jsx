@@ -24,6 +24,8 @@ import DeliveryOptions from '@/pages/DeliveryOptions';
 import Affiliate from '@/pages/Affiliate';
 import AffiliateDashboard from '@/pages/AffiliateDashboard';
 import ReferralBanner from '@/components/ReferralBanner';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import OfflineIndicator from '@/components/OfflineIndicator';
 
 const App = () => {
   const { pathname } = useLocation();
@@ -37,6 +39,7 @@ const App = () => {
   return (
     <div className="">
       <Toaster richColors closeButton/>
+        <OfflineIndicator />
         <ReferralBanner />
         <Navbar />
         <SearchBar />
@@ -59,6 +62,7 @@ const App = () => {
             <Route path='*' element={<NotFound/>} />
           </Routes>
         <Footer/>
+        <PWAInstallPrompt />
     </div>
   )
 }
