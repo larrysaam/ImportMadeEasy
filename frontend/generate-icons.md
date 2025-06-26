@@ -15,9 +15,9 @@ Create these icon files in the `frontend/public/icons/` directory:
 - `icon-384x384.png` (384x384 pixels)
 - `icon-512x512.png` (512x512 pixels)
 
-## Using Your Existing Logo
+## Using Your Clean Logo
 
-You can use your existing logo from `frontend/src/assets/import.png` as the base.
+You can use your clean logo from `frontend/src/assets/cleanlogo.png` as the base.
 
 ### Option 1: Online Icon Generator
 1. Go to https://realfavicongenerator.net/ or https://www.pwabuilder.com/imageGenerator
@@ -32,15 +32,15 @@ You can use your existing logo from `frontend/src/assets/import.png` as the base
 
 mkdir -p public/icons
 
-# Generate all icon sizes
-magick src/assets/import.png -resize 72x72 public/icons/icon-72x72.png
-magick src/assets/import.png -resize 96x96 public/icons/icon-96x96.png
-magick src/assets/import.png -resize 128x128 public/icons/icon-128x128.png
-magick src/assets/import.png -resize 144x144 public/icons/icon-144x144.png
-magick src/assets/import.png -resize 152x152 public/icons/icon-152x152.png
-magick src/assets/import.png -resize 192x192 public/icons/icon-192x192.png
-magick src/assets/import.png -resize 384x384 public/icons/icon-384x384.png
-magick src/assets/import.png -resize 512x512 public/icons/icon-512x512.png
+# Generate all icon sizes from clean logo
+magick src/assets/cleanlogo.png -resize 72x72 public/icons/icon-72x72.png
+magick src/assets/cleanlogo.png -resize 96x96 public/icons/icon-96x96.png
+magick src/assets/cleanlogo.png -resize 128x128 public/icons/icon-128x128.png
+magick src/assets/cleanlogo.png -resize 144x144 public/icons/icon-144x144.png
+magick src/assets/cleanlogo.png -resize 152x152 public/icons/icon-152x152.png
+magick src/assets/cleanlogo.png -resize 192x192 public/icons/icon-192x192.png
+magick src/assets/cleanlogo.png -resize 384x384 public/icons/icon-384x384.png
+magick src/assets/cleanlogo.png -resize 512x512 public/icons/icon-512x512.png
 ```
 
 ### Option 3: Using Node.js Script
@@ -53,7 +53,7 @@ const fs = require('fs');
 const path = require('path');
 
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-const inputFile = 'src/assets/import.png';
+const inputFile = 'src/assets/cleanlogo.png';
 const outputDir = 'public/icons';
 
 // Create output directory
