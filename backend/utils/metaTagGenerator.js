@@ -6,13 +6,28 @@
  * @param {Object} product - Product object from database
  * @param {string} baseUrl - Base URL of the application
  * @param {string} productUrl - Full URL of the product page
+ * @param {string} activeImage - Currently active/displayed image URL (optional)
+ * @param {string} selectedColor - Selected color name (optional)
  * @returns {string} HTML string with meta tags
  */
-const generateProductMetaHTML = (product, baseUrl, productUrl) => {
+const generateProductMetaHTML = (product, baseUrl, productUrl, activeImage = null, selectedColor = null) => {
   const title = `${product.name} - ImportMadeEasy`
-  const description = product.description || `${product.name} available for FCFA ${product.price?.toLocaleString('fr-CM')}. Shop now at ImportMadeEasy!`
-  const image = product.image && product.image[0] ? product.image[0] : `${baseUrl}/default-product-image.jpg`
+  const baseDescription = product.description || `${product.name} available for FCFA ${product.price?.toLocaleString('fr-CM')}. Shop now at ImportMadeEasy!`
+  const colorInfo = selectedColor ? ` Available in ${selectedColor}.` : ''
+  const description = baseDescription + colorInfo
+
+  // Prioritize activeImage for link previews
+  let image = ''
+  if (activeImage) {
+    image = activeImage
+  } else if (product.image && product.image[0]) {
+    image = product.image[0]
+  } else {
+    image = `${baseUrl}/default-product-image.jpg`
+  }
+
   const price = product.price || 0
+  const imageAlt = `${product.name}${selectedColor ? ` in ${selectedColor}` : ''} - FCFA ${price.toLocaleString('fr-CM')}`
   
   return `
 <!DOCTYPE html>
@@ -53,7 +68,9 @@ const generateProductMetaHTML = (product, baseUrl, productUrl) => {
     <!-- WhatsApp specific -->
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="${product.name} - FCFA ${price.toLocaleString('fr-CM')}">
+    <meta property="og:image:alt" content="${imageAlt}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:secure_url" content="${image}">
     
     <!-- Structured Data for Rich Snippets -->
     <script type="application/ld+json">
@@ -78,7 +95,8 @@ const generateProductMetaHTML = (product, baseUrl, productUrl) => {
           "name": "ImportMadeEasy"
         }
       },
-      "category": "${product.category || 'Fashion'}"
+      "category": "${product.category || 'Fashion'}",
+      "color": "${selectedColor || 'Multiple colors available'}"
     }
     </script>
     
@@ -96,8 +114,9 @@ const generateProductMetaHTML = (product, baseUrl, productUrl) => {
 <body>
     <!-- Fallback content for crawlers and users with JS disabled -->
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center;">
-        <img src="${image}" alt="${product.name}" style="max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 20px;">
+        <img src="${image}" alt="${imageAlt}" style="max-width: 300px; height: auto; border-radius: 8px; margin-bottom: 20px;">
         <h1 style="color: #333; margin-bottom: 10px;">${product.name}</h1>
+        ${selectedColor ? `<p style="color: #777; font-size: 14px; margin-bottom: 10px;">Color: ${selectedColor}</p>` : ''}
         <p style="color: #666; font-size: 18px; margin-bottom: 20px;">FCFA ${price.toLocaleString('fr-CM')}</p>
         <p style="color: #888; margin-bottom: 30px;">${description}</p>
         <a href="${productUrl}" style="background: #e14512; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">

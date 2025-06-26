@@ -221,13 +221,25 @@ export const copyToClipboard = async (text) => {
  */
 export const generateProductMetaTags = (product, currency, activeImage, selectedColor, currentUrl) => {
   const title = `${product.name} - ImportMadeEasy`
-  const description = product.description || `${product.name} available for ${currency} ${product.price?.toLocaleString('fr-CM')}. Shop now at ImportMadeEasy!`
+  const baseDescription = product.description || `${product.name} available for ${currency} ${product.price?.toLocaleString('fr-CM')}. Shop now at ImportMadeEasy!`
+  const colorInfo = selectedColor ? ` Available in ${selectedColor.colorName}.` : ''
+  const description = baseDescription + colorInfo
   const price = `${currency} ${product.price?.toLocaleString('fr-CM')}`
-  
+
+  // Prioritize activeImage for link previews
+  let image = ''
+  if (activeImage) {
+    image = activeImage
+  } else if (selectedColor && selectedColor.colorImages && selectedColor.colorImages.length > 0) {
+    image = selectedColor.colorImages[0]
+  } else if (product.image && product.image.length > 0) {
+    image = product.image[0]
+  }
+
   return {
     title,
     description,
-    image: activeImage || (product.image && product.image[0]) || '',
+    image,
     url: currentUrl,
     price,
     currency: 'XAF',
@@ -237,6 +249,29 @@ export const generateProductMetaTags = (product, currency, activeImage, selected
     category: product.category || 'Fashion',
     color: selectedColor?.colorName || 'Multiple colors available'
   }
+}
+
+/**
+ * Generate share URL with image and color parameters for better link previews
+ * @param {string} baseUrl - Base product URL
+ * @param {string} activeImage - Currently displayed image URL
+ * @param {Object} selectedColor - Selected color object
+ * @returns {string} Share URL with parameters
+ */
+export const generateShareUrl = (baseUrl, activeImage, selectedColor) => {
+  const url = new URL(baseUrl)
+
+  // Add active image parameter for meta tag generation
+  if (activeImage) {
+    url.searchParams.set('image', activeImage)
+  }
+
+  // Add selected color parameter
+  if (selectedColor?.colorName) {
+    url.searchParams.set('color', selectedColor.colorName)
+  }
+
+  return url.toString()
 }
 
 /**
@@ -255,7 +290,7 @@ export const trackShareEvent = (platform, productId, productName) => {
       item_name: productName
     })
   }
-  
+
   // Facebook Pixel
   if (window.fbq) {
     window.fbq('track', 'Share', {
@@ -264,7 +299,7 @@ export const trackShareEvent = (platform, productId, productName) => {
       content_name: productName
     })
   }
-  
+
   // Custom analytics
   console.log(`Share tracked: ${platform} - ${productName} (${productId})`)
 }

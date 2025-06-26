@@ -14,6 +14,7 @@ const getBaseUrl = (req) => {
 metaRouter.get('/product/:id', async (req, res) => {
   try {
     const { id } = req.params
+    const { image: activeImage, color: selectedColor } = req.query
     const baseUrl = getBaseUrl(req)
     const productUrl = `${baseUrl}/product/${id}`
 
@@ -25,18 +26,18 @@ metaRouter.get('/product/:id', async (req, res) => {
       return res.redirect(`${baseUrl}/404`)
     }
 
-    // Generate HTML with meta tags
-    const metaHTML = generateProductMetaHTML(product, baseUrl, productUrl)
+    // Generate HTML with meta tags, including active image and color
+    const metaHTML = generateProductMetaHTML(product, baseUrl, productUrl, activeImage, selectedColor)
 
     // Set content type to HTML
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    
+
     // Send the HTML with meta tags
     res.send(metaHTML)
 
   } catch (error) {
     console.error('Error serving product meta tags:', error)
-    
+
     // Fallback to homepage redirect
     const baseUrl = getBaseUrl(req)
     res.redirect(baseUrl)
@@ -152,10 +153,11 @@ const isBotRequest = (userAgent) => {
 metaRouter.get('/share/product/:id', async (req, res) => {
   try {
     const userAgent = req.get('User-Agent') || ''
-    
+
     // If it's a bot/crawler, serve meta tags
     if (isBotRequest(userAgent)) {
       const { id } = req.params
+      const { image: activeImage, color: selectedColor } = req.query
       const baseUrl = getBaseUrl(req)
       const productUrl = `${baseUrl}/product/${id}`
 
@@ -165,13 +167,15 @@ metaRouter.get('/share/product/:id', async (req, res) => {
         return res.redirect(`${baseUrl}/404`)
       }
 
-      const metaHTML = generateProductMetaHTML(product, baseUrl, productUrl)
+      const metaHTML = generateProductMetaHTML(product, baseUrl, productUrl, activeImage, selectedColor)
       res.setHeader('Content-Type', 'text/html; charset=utf-8')
       res.send(metaHTML)
     } else {
       // For regular users, redirect to the actual product page
       const baseUrl = getBaseUrl(req)
-      res.redirect(`${baseUrl}/product/${req.params.id}`)
+      const queryString = req.url.includes('?') ? req.url.split('?')[1] : ''
+      const redirectUrl = queryString ? `${baseUrl}/product/${req.params.id}?${queryString}` : `${baseUrl}/product/${req.params.id}`
+      res.redirect(redirectUrl)
     }
 
   } catch (error) {
