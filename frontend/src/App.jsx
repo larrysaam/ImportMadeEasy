@@ -21,6 +21,9 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import OrderSuccess from '@/pages/OrderSuccess';
 import DeliveryOptions from '@/pages/DeliveryOptions';
+import Affiliate from '@/pages/Affiliate';
+import AffiliateDashboard from '@/pages/AffiliateDashboard';
+import ReferralBanner from '@/components/ReferralBanner';
 
 const App = () => {
   const { pathname } = useLocation();
@@ -34,6 +37,7 @@ const App = () => {
   return (
     <div className="">
       <Toaster richColors closeButton/>
+        <ReferralBanner />
         <Navbar />
         <SearchBar />
           <Routes>
@@ -50,6 +54,8 @@ const App = () => {
             <Route path='/verify' element={<Verify/>} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/delivery-options" element={<DeliveryOptions />} />
+            <Route path="/affiliate" element={<Affiliate />} />
+            <Route path="/affiliate/dashboard" element={<AffiliateDashboard />} />
             <Route path='*' element={<NotFound/>} />
           </Routes>
         <Footer/>

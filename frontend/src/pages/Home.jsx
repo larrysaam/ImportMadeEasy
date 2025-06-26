@@ -11,8 +11,8 @@ const Home = () => {
   return (
     <div className=' animate-fade animate-duration-500'>
       <Hero/>
-      <NewLook/>
       <LatestCollection/>
+      <NewLook/>
       <Bestseller/>
       <Picks/>
       <NewsletterBox/>

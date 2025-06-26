@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { BsGrid,  } from 'react-icons/bs'
 import {
-  BsChatDots // Example icon for messages
+  BsChatDots, // Example icon for messages
+  BsPeople // Icon for affiliates
 } from 'react-icons/bs'
 import { HiMenuAlt3 } from 'react-icons/hi'
 import { IoMdClose } from 'react-icons/io'
@@ -111,18 +112,27 @@ const Sidebar = ({ setToken }) => {
             <p className='block'>PreOrders</p>
           </NavLink>
 
-          <NavLink 
-            to='/messages' 
+          <NavLink
+            to='/messages'
             onClick={() => setIsOpen(false)}
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
           >
             {/* Use an appropriate icon, e.g., BsChatDots or assets.message_icon */}
-            <BsChatDots size={18} /> 
+            <BsChatDots size={18} />
             <p className='block'>Messages</p>
           </NavLink>
 
-          <NavLink 
-            to='/settings' 
+          <NavLink
+            to='/affiliates'
+            onClick={() => setIsOpen(false)}
+            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+          >
+            <BsPeople size={18} />
+            <p className='block'>Affiliates</p>
+          </NavLink>
+
+          <NavLink
+            to='/settings'
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
             onClick={() => setIsOpen(false)}
           >

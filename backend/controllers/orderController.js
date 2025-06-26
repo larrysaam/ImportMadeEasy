@@ -1,6 +1,7 @@
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import productModel from "../models/productModel.js";
+import referralModel from "../models/referralModel.js";
 import Stripe from 'stripe'
 import * as paypal from '@paypal/checkout-server-sdk';
 import { sendOrderNotification } from '../utils/emailService.js'
@@ -8,6 +9,16 @@ import { sendOrderNotification } from '../utils/emailService.js'
 //global variables
 const currency = process.env.CURRENCY || 'EUR' // Default currency symbol
 const deliveryCharge = 10
+
+// Helper function to track affiliate purchase
+const trackAffiliatePurchase = async (userId, orderId, amount) => {
+  try {
+    await referralModel.trackPurchase(userId, orderId, amount)
+  } catch (error) {
+    console.error('Error tracking affiliate purchase:', error)
+    // Don't fail the order if affiliate tracking fails
+  }
+}
 
 // PayPal SDK Client Setup
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
@@ -52,6 +63,9 @@ const placeOrder = async (req, res) => {
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
+
+    // Track affiliate purchase
+    await trackAffiliatePurchase(userId, newOrder._id, amount);
 
     // Send email notification
     await sendOrderNotification(newOrder);
@@ -158,6 +172,10 @@ const capturepaypalorder = async (req, res) => {
 
       const newOrder = new orderModel(orderData);
       await newOrder.save();
+
+      // Track affiliate purchase
+      await trackAffiliatePurchase(userId, newOrder._id, amount);
+
       await sendOrderNotification(newOrder);
       await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
@@ -210,6 +228,9 @@ const placeOrderPaypal = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
+    // Track affiliate purchase
+    await trackAffiliatePurchase(userId, newOrder._id, amount);
+
     // Send email notification
     await sendOrderNotification(newOrder);
 
@@ -249,6 +270,9 @@ const placeOrderStripe = async  (req,res) => {
 
         const newOrder = new orderModel(orderData)
         await newOrder.save()
+
+        // Track affiliate purchase
+        await trackAffiliatePurchase(userId, newOrder._id, amount);
 
         const line_items = processedItems.map((item)=> ({
             price_data: {

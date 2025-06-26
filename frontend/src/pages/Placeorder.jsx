@@ -10,12 +10,10 @@ import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { toast } from 'sonner'
 import { assets } from '@/assets/assets'
-import { PaymentOperation } from '@hachther/mesomb';
+// Removed direct MeSomb import - now handled by backend
 
 const Placeorder = () => {
-  const MESOMB_APP_KEY = import.meta.env.VITE_MESOMB_APP_KEY;
-  const MESOMB_ACCESS_KEY = import.meta.env.VITE_MESOMB_ACCESS_KEY;
-  const MESOMB_SECRET_KEY = import.meta.env.VITE_MESOMB_SECRET_KEY;
+  // MeSomb API keys are now handled by the backend
   
   const [mobileNumber, setMobileNumber] = useState('')
   const [mobileService, setMobileService] = useState('MTN')
@@ -152,7 +150,7 @@ const Placeorder = () => {
         toast.error("Please enter your mobile number");
         return;
       }
-      
+
       // Validate form data before proceeding
       const formData = control._formValues;
       const validationResult = orderSchema.safeParse(formData);
@@ -161,157 +159,48 @@ const Placeorder = () => {
         handleSubmit(() => {})(); // This will show form errors
         return;
       }
-      
+
       setIsProcessingMobile(true);
-      
-      // Format phone number (ensure it starts with 237 for Cameroon)
-      let formattedNumber = mobileNumber;
-      if (!formattedNumber.startsWith('237') && !formattedNumber.startsWith('+237')) {
-        formattedNumber = '237' + formattedNumber;
-      }
-      formattedNumber = formattedNumber.replace('+', '');
-      
-      // Calculate total amount in XAF (assuming store currency needs conversion)
+
+      // Calculate total amount
       const totalAmount = Math.round(getCartAmount() + deliveryFee);
-      
-      console.log("MeSomb API Keys:", {
-        appKey: MESOMB_APP_KEY ? "Set" : "Not set",
-        accessKey: MESOMB_ACCESS_KEY ? "Set" : "Not set",
-        secretKey: MESOMB_SECRET_KEY ? "Set" : "Not set"
-      });
-      
-      // Check if API keys are set
-      if (!MESOMB_APP_KEY || !MESOMB_ACCESS_KEY || !MESOMB_SECRET_KEY) {
-        toast.error("MeSomb API keys are not configured. Please contact the administrator.");
-        setIsProcessingMobile(false);
-        return;
-      }
-      
-      // For testing in development, simulate a successful payment
-      if (import.meta.env.DEV && import.meta.env.VITE_MOCK_PAYMENTS === 'true') {
-        console.log("Using mock payment in development mode");
-        
-        // Prepare order data for backend
-        const orderPayload = prepareOrderData(control._formValues);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Send order to backend with simulated transaction details
-        try {
-          const backendResponse = await axios.post(
-            `${backendUrl}/api/order/create-mobile-order`,
-            {
-              ...orderPayload,
-              paymentMethod: 'mobile',
-              transactionId: 'mock-' + Date.now(),
-              paymentDetails: {
-                service: mobileService,
-                phoneNumber: formattedNumber,
-                amount: totalAmount,
-                currency: 'XAF'
-              }
-            },
-            { headers: { token } }
-          );
-          
-          if (backendResponse.data.success) {
-            resetCart();
-            toast.success('Payment successful! Your order has been placed.');
-            navigate('/orders');
-          } else {
-            toast.error(backendResponse.data.message || 'Order creation failed. Please contact support.');
+
+      // Prepare order data
+      const orderPayload = prepareOrderData(formData);
+
+      console.log('Frontend - Form data:', formData);
+      console.log('Frontend - Order payload:', orderPayload);
+
+      // Send payment request to backend
+      const response = await axios.post(
+        `${backendUrl}/api/mesomb/payment/mobile`,
+        {
+          orderData: orderPayload,
+          paymentDetails: {
+            phoneNumber: mobileNumber,
+            service: mobileService,
+            amount: totalAmount
           }
-        } catch (backendError) {
-          console.error('Backend error:', backendError);
-          toast.error('Failed to create order. Please try again.');
-        }
-        
-        setIsProcessingMobile(false);
-        return;
-      }
-      
-      // Initialize MeSomb client
-      const client = new PaymentOperation({
-        applicationKey: MESOMB_APP_KEY,
-        accessKey: MESOMB_ACCESS_KEY,
-        secretKey: MESOMB_SECRET_KEY
-      });
-      
-      // Prepare order data for backend
-      const orderPayload = prepareOrderData(control._formValues);
-      
-      console.log("Making MeSomb payment request with:", {
-        amount: totalAmount,
-        service: mobileService,
-        payer: formattedNumber,
-        country: 'CM',
-        currency: 'XAF'
-      });
-      
-      // Make payment request
-      try {
-        const response = await client.makeCollect({
-          amount: totalAmount,
-          service: mobileService,
-          payer: formattedNumber,
-          country: 'CM',
-          currency: 'XAF',
-          fees: false,
-          customer: {
-            email: formData.email,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address: formData.street,
-            city: formData.city,
-            region: formData.state,
-            country: formData.country
-          },
-          products: orderPayload.items.map(item => ({
-            name: item.name,
-            category: 'Clothing',
-            quantity: item.quantity,
-            amount: item.price * item.quantity
-          }))
-        });
-        
-        console.log("MeSomb response:", response);
-        
-        if (response.isOperationSuccess() && response.isTransactionSuccess()) {
-          // Send order to backend with transaction details
-          const backendResponse = await axios.post(
-            `${backendUrl}/api/order/create-mobile-order`,
-            {
-              ...orderPayload,
-              paymentMethod: 'mobile',
-              transactionId: response.transaction.id,
-              paymentDetails: {
-                service: mobileService,
-                phoneNumber: formattedNumber,
-                amount: totalAmount,
-                currency: 'XAF'
-              }
-            },
-            { headers: { token } }
-          );
-          
-          if (backendResponse.data.success) {
-            resetCart();
-            toast.success('Payment successful! Your order has been placed.');
-            navigate('/orders');
-          } else {
-            toast.error(backendResponse.data.message || 'Order creation failed. Please contact support.');
+        },
+        {
+          headers: {
+            'token': token,
+            'Content-Type': 'application/json'
           }
-        } else {
-          toast.error(response.message || 'Mobile money payment failed. Please try again.');
         }
-      } catch (mesombError) {
-        console.error('MeSomb API error:', mesombError);
-        toast.error('Failed to connect to payment service. Please try again later or use another payment method.');
+      );
+
+      if (response.data.success) {
+        resetCart();
+        toast.success('Payment successful! Your order has been placed.');
+        navigate('/orders');
+      } else {
+        toast.error(response.data.message || 'Payment failed. Please try again.');
       }
+
     } catch (error) {
       console.error('Mobile payment error:', error);
-      toast.error(error.response?.data?.message || 'Payment failed. Please try again or use another method.');
+      toast.error('Payment processing failed. Please try again.');
     } finally {
       setIsProcessingMobile(false);
     }

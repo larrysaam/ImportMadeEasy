@@ -3,7 +3,7 @@ import { assets } from '@/assets/assets';
 import { ShopContext } from '@/context/ShopContext'
 import axios from 'axios';
 import { toast } from "sonner"
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Input } from "@/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -18,7 +18,7 @@ const signupSchema = z.object({
 
 const Signup = () => {
 
-  const { token, setToken, navigate, backendUrl } = useContext(ShopContext)
+  const { token, setToken, navigate, backendUrl, affiliateCode, affiliateInfo, setAffiliateCode, setAffiliateInfo } = useContext(ShopContext)
   const [showPassword, setShowPassword] = useState(false)
 
   const {
@@ -40,7 +40,11 @@ const Signup = () => {
   const signupMutation = useMutation({
     mutationFn: async (values) => {
       await new Promise(resolve => setTimeout(resolve, 1000)); // Artificial delay of 1 second
-      const response = await axios.post(`${backendUrl}/api/user/register`, values)
+      const registrationData = { ...values }
+      if (affiliateCode) {
+        registrationData.referralCode = affiliateCode
+      }
+      const response = await axios.post(`${backendUrl}/api/user/register`, registrationData)
       console.log(response.data)
       return response.data
     },
@@ -48,6 +52,13 @@ const Signup = () => {
       if (data.success) {
         setToken(data.token)
         localStorage.setItem('token', data.token)
+
+        // Clear affiliate data after successful registration
+        localStorage.removeItem('affiliateCode')
+        localStorage.removeItem('affiliateInfo')
+        setAffiliateCode(null)
+        setAffiliateInfo(null)
+
         navigate('/')
         toast.success("Registered successfully!")
         reset()
@@ -71,6 +82,8 @@ const Signup = () => {
     }
   }, [token])
 
+  // Referral tracking is now handled in ShopContext
+
   const password = watch('password') || '';
 
   return (
@@ -83,6 +96,21 @@ const Signup = () => {
         <p className='prata-regular text-3xl'>Create an account</p>
         <hr className='border-none h-[1.5px] w-8 bg-gray-800' />
       </div>
+
+      {/* Referral Info Display */}
+      {affiliateInfo && (
+        <div className='w-full p-4 bg-green-50 border border-green-200 rounded-lg mb-4'>
+          <div className='flex items-center gap-2'>
+            <div className='w-2 h-2 bg-green-500 rounded-full'></div>
+            <p className='text-green-800 font-medium'>
+              Referred by {affiliateInfo.name}
+            </p>
+          </div>
+          <p className='text-green-600 text-sm mt-1'>
+            You're joining through an affiliate link. Welcome to our community!
+          </p>
+        </div>
+      )}
       {/* Name Input */}
       <div className='w-full'>
         <Controller
@@ -157,7 +185,7 @@ const Signup = () => {
       {/* Submit Button with Loading State */}
       <button 
         type="submit"
-        className={`transistion-all duration-300 hover:bg-slate-700 font-light px-8 py-2 mt-4 flex items-center justify-center transition-all duration-300
+        className={`transition-all duration-300 hover:bg-slate-700 font-light px-8 py-2 mt-4 flex items-center justify-center
           ${signupMutation.isPending ? 'bg-gray-400 text-gray-800 cursor-not-allowed' : 'bg-black text-white'}`}
         disabled={signupMutation.isPending}
       >

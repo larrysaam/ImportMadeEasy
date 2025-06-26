@@ -14,6 +14,8 @@ const ShopContextProvider = (props) => {
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [token, setToken] = useState(null);
+  const [affiliateCode, setAffiliateCode] = useState(null);
+  const [affiliateInfo, setAffiliateInfo] = useState(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -30,6 +32,75 @@ const ShopContextProvider = (props) => {
       setToken(savedToken);
     }
   }, []);
+
+  // Handle affiliate code tracking
+  useEffect(() => {
+    // Check for affiliate code in URL on any page
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+
+    if (refCode) {
+      // Store affiliate code in localStorage and state
+      localStorage.setItem('affiliateCode', refCode);
+      setAffiliateCode(refCode);
+
+      // Track the click
+      fetch(`${backendUrl}/api/affiliate/track/${refCode}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).catch(error => {
+        console.error('Error tracking affiliate click:', error);
+      });
+
+      // Validate and get affiliate info
+      fetch(`${backendUrl}/api/affiliate/validate/${refCode}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            setAffiliateInfo(data.affiliate);
+            localStorage.setItem('affiliateInfo', JSON.stringify(data.affiliate));
+            toast.success(`Welcome! You were referred by ${data.affiliate.name}. Sign up to get started!`);
+          }
+        })
+        .catch(error => {
+          console.error('Error validating affiliate code:', error);
+        });
+
+      // Clean URL by removing the ref parameter but keep the affiliate code in storage
+      const newUrl = new URL(window.location);
+      newUrl.searchParams.delete('ref');
+      window.history.replaceState({}, '', newUrl.toString());
+    } else {
+      // Check if we have a stored affiliate code from previous visit
+      const storedCode = localStorage.getItem('affiliateCode');
+      const storedInfo = localStorage.getItem('affiliateInfo');
+
+      if (storedCode) {
+        setAffiliateCode(storedCode);
+      }
+
+      if (storedInfo) {
+        try {
+          setAffiliateInfo(JSON.parse(storedInfo));
+        } catch (error) {
+          console.error('Error parsing stored affiliate info:', error);
+        }
+      }
+    }
+  }, [backendUrl]);
+
+  // Clear affiliate data when user logs in (optional - you might want to keep it)
+  useEffect(() => {
+    if (token) {
+      // Optionally clear affiliate data when user logs in
+      // localStorage.removeItem('affiliateCode');
+      // localStorage.removeItem('affiliateInfo');
+      // setAffiliateCode(null);
+      // setAffiliateInfo(null);
+    }
+  }, [token]);
 
   // Load products list
   const { data: products = [], isLoading: isProductsLoading } = useQuery({
@@ -246,6 +317,10 @@ const ShopContextProvider = (props) => {
     token,
     setToken,
     refetch,
+    affiliateCode,
+    setAffiliateCode,
+    affiliateInfo,
+    setAffiliateInfo,
   };
 
   return (

@@ -143,8 +143,10 @@ const Navbar = () => {
           <Link to='/' className='cursor-pointer'>
             <img src={assets.IMELogo} alt='logo' className='w-16 sm:w-18' />
           </Link>
-          <div>
-          </div>
+
+          {/* div to stretch the navbar */}
+          {/* <div>
+          </div> */}
           <ul className='hidden sm:flex gap-5 text-sm text-black'>
             {Object.keys(categories).map((category) => (
               <div key={category} className="group relative">

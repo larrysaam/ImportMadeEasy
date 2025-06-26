@@ -1,4 +1,5 @@
 import userModel from '../models/userModel.js'
+import referralModel from '../models/referralModel.js'
 import validator from 'validator'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
@@ -53,7 +54,7 @@ const loginUser = async (req,res) => {
 const registerUser = async (req,res) => {
     try {
 
-        const { name, email, password } = req.body;
+        const { name, email, password, referralCode } = req.body;
 
         //checking for existing user
         const exists = await userModel.findOne({email})
@@ -98,6 +99,21 @@ const registerUser = async (req,res) => {
         })
 
         const user = await newUser.save()
+
+        // Track referral signup if referral code was provided
+        if (referralCode) {
+            try {
+                await referralModel.trackSignup(referralCode, user._id, {
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent'),
+                    referrer: req.get('Referer')
+                })
+            } catch (error) {
+                console.error('Error tracking referral signup:', error)
+                // Don't fail registration if referral tracking fails
+            }
+        }
+
         const token = createToken(user._id)
         res.json({
             success: true,

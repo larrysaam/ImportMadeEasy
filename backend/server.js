@@ -13,6 +13,8 @@ import PreorderRouter from './routes/preorderRoute.js'
 import settingRoute from './routes/settingRoute.js'
 import reviewRoutes from './routes/reviewRoutes.js'
 import photoRouter from './routes/PhotoRoute.js'
+import affiliateRouter from './routes/affiliateRoute.js'
+import mesombRouter from './routes/mesombRoute.js'
 
 //App config
 
@@ -40,6 +42,8 @@ app.use('/api/categories', CategoryRouter)
 app.use('/api/settings', settingRoute)
 app.use('/api/reviews', reviewRoutes)
 app.use('/api/photos', photoRouter)
+app.use('/api/affiliate', affiliateRouter)
+app.use('/api/mesomb', mesombRouter)
 
 app.get('/', (req, res) => {
     res.send("API working")
