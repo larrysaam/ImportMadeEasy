@@ -294,7 +294,7 @@ const Product = () => {
                 </span>
               )}
             </div>
-            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency}{productData?.price}</p>
+            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {productData?.price?.toLocaleString('fr-CM')}</p>
             <p className='mt-3 sm:mt-5 text-gray-500 text-sm sm:text-base'>{productData?.description}</p>
             
             {/* Color Selection */}

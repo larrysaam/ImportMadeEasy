@@ -2,8 +2,8 @@ import mongoose from 'mongoose'
 
 const settingSchema = new mongoose.Schema({
   currency: {
-    name: { type: String, default: process.env.CURRENCY || 'EUR'},
-    sign: { type: String, default: process.env.CURRENCY_SYMBOL || '€' }
+    name: { type: String, default: process.env.CURRENCY || 'XAF'},
+    sign: { type: String, default: process.env.CURRENCY_SYMBOL || 'FCFA' }
   },
   email: {
     notifications: { type: String, required: true }

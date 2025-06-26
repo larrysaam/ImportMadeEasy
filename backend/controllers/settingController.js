@@ -121,7 +121,7 @@ export const getSettings = async (req, res) => {
     
     if (!settings) {
       settings = await Setting.create({
-        currency: { name: process.env.CURRENCY || 'EUR', sign: process.env.CURRENCY_SYMBOL || '€' },
+        currency: { name: process.env.CURRENCY || 'XAF', sign: process.env.CURRENCY_SYMBOL || 'FCFA' },
         email: { notifications: 'notifications@example.com' },
         images: { hero: [], banner: '' }
       })

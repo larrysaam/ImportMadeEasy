@@ -7,7 +7,7 @@ import * as paypal from '@paypal/checkout-server-sdk';
 import { sendOrderNotification } from '../utils/emailService.js'
 
 //global variables
-const currency = process.env.CURRENCY || 'EUR' // Default currency symbol
+const currency = process.env.CURRENCY || 'XAF' // Default currency symbol
 const deliveryCharge = 10
 
 // Helper function to track affiliate purchase

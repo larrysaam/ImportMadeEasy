@@ -3,7 +3,7 @@ import axios from 'axios'
 import { backendUrl } from '../App'
 import StatsCard from '@/components/dashboard/StatsCard'
 import RevenueChart from '@/components/dashboard/RevenueChart'
-import RecentOrders from '@/components/dashboard/RecentOrders'
+import UserManagement from '@/components/dashboard/UserManagement'
 import { 
   BsBag, 
   BsPeople,
@@ -15,10 +15,10 @@ const Dashboard = ({ token }) => {
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
+    totalPreorders: 0,
     totalUsers: 0,
     totalRevenue: 0,
-    revenueData: [],
-    recentOrders: []
+    revenueData: []
   })
 
   
@@ -83,9 +83,9 @@ const Dashboard = ({ token }) => {
         <RevenueChart data={stats.revenueData} />
       </div>
 
-      {/* Recent Orders */}
+      {/* User Management */}
       <div>
-        <RecentOrders orders={stats.recentOrders} />
+        <UserManagement token={token} />
       </div>
     </div>
   )

@@ -108,12 +108,6 @@ DashboardRouter.get('/dashboard', adminAuth, async (req, res) => {
       revenue: item.revenue
     }))
 
-      // Get recent orders
-    const recentOrders = await Order.find()
-      .limit(5)
-      .sort({ createdAt: -1 })
-
-
     res.json({
       success: true,
       stats: {
@@ -122,12 +116,113 @@ DashboardRouter.get('/dashboard', adminAuth, async (req, res) => {
         totalPreorders,
         totalUsers,
         totalRevenue,
-        revenueData: combinedRevenueData,
-        recentOrders
+        revenueData: combinedRevenueData
       }
     })
   } catch (error) {
     console.error('Dashboard error:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Get all users for admin management
+DashboardRouter.get('/users', adminAuth, async (req, res) => {
+  try {
+    const users = await User.find({}, {
+      name: 1,
+      email: 1,
+      date: 1,
+      _id: 1
+    }).sort({ date: -1 })
+
+    res.json({
+      success: true,
+      users
+    })
+  } catch (error) {
+    console.error('Get users error:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Get user statistics
+DashboardRouter.get('/users/:userId/stats', adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params
+
+    // Check if user exists
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    // Get user's orders
+    const orders = await Order.find({ userId })
+    const preorders = await PreOrder.find({ userId })
+
+    // Calculate statistics
+    const totalOrders = orders.length
+    const totalPreorders = preorders.length
+
+    // Calculate total spent (only from paid orders)
+    const totalSpent = orders
+      .filter(order => order.payment === true)
+      .reduce((sum, order) => sum + order.amount, 0)
+
+    // Get last order date
+    const lastOrder = orders
+      .filter(order => order.payment === true)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+
+    const lastOrderDate = lastOrder ? lastOrder.date : null
+
+    res.json({
+      success: true,
+      stats: {
+        totalOrders,
+        totalPreorders,
+        totalSpent,
+        lastOrderDate
+      }
+    })
+  } catch (error) {
+    console.error('Get user stats error:', error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// Delete a user account
+DashboardRouter.delete('/users/:userId', adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params
+
+    // Check if user exists
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    // Delete user's orders
+    await Order.deleteMany({ userId })
+
+    // Delete user's preorders
+    await PreOrder.deleteMany({ userId })
+
+    // Delete the user account
+    await User.findByIdAndDelete(userId)
+
+    res.json({
+      success: true,
+      message: 'User account and associated data deleted successfully'
+    })
+  } catch (error) {
+    console.error('Delete user error:', error)
     res.status(500).json({ success: false, message: error.message })
   }
 })

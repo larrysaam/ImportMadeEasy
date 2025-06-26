@@ -175,7 +175,7 @@ const Orders = () => {
                     )}
                   </div>
                   <div className='flex flex-wrap items-center gap-3 mt-1 text-base text-gray-700'>
-                    <p>{currency}{(filter === 'preorders')? item.items[0].price : item.price}</p>
+                    <p>{currency} {((filter === 'preorders')? item.items[0].price : item.price)?.toLocaleString('fr-CM')}</p>
                     <p>Quantity: {(filter === 'preorders')? item.items[0].quantity : item.quantity}</p>
                     <p>Size: {(filter === 'preorders')? item.items[0].size : item.size}</p>
                     {/* Display color if available */}

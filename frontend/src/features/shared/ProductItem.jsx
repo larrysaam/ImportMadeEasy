@@ -10,7 +10,7 @@ const ProductItem = ({id, image, name, price, preorder}) => {
             <div className='overflow-hidden rounded-xl relative'>
                 <img 
                     src={image[0]} 
-                    className='w-full aspect-square transistion-all duration-300 ease-in-out group-hover:scale-[115%] aspect-square object-cover' 
+                    className='w-full aspect-square transition-all duration-300 ease-in-out group-hover:scale-[115%] object-cover'
                     alt=''
                 />
                 {preorder && (
@@ -21,7 +21,7 @@ const ProductItem = ({id, image, name, price, preorder}) => {
                 {console.log('preorder ', preorder)}
             </div> 
             <p className='pt-3 pb-1 text-lg'>{name}</p>
-            <p className='text-lg font-medium'>{currency}{price}</p>
+            <p className='text-lg font-medium'>{currency} {price?.toLocaleString('fr-CM')}</p>
         </Link>
     )
 }

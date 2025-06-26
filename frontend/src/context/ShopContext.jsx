@@ -8,7 +8,7 @@ import cartAddSound from '@/assets/cart-add-sound.wav'; // Import your sound fil
 export const ShopContext = createContext();
 
 const ShopContextProvider = (props) => {
-  const currency = import.meta.env.VITE_CURRENCY_SYMBOL || '€'
+  const currency = import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'
   const deliveryFee = 900;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [search, setSearch] = useState("");

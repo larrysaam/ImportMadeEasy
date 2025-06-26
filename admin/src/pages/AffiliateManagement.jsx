@@ -150,9 +150,12 @@ const AffiliateManagement = ({ token }) => {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    // Format currency as FCFA (Central African CFA Franc)
+    return new Intl.NumberFormat('fr-CM', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'XAF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount)
   }
 

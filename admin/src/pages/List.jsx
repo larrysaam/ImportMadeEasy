@@ -197,7 +197,7 @@ const List = ({token}) => {
             <img alt={item.name} src={item.image[0]} className='w-auto h-12 object-cover rounded-md'/>
             <p>{item.name}</p>
             <p>{item.category}</p>
-            <p>{currency}{item.price}</p>
+            <p>{currency} {item.price?.toLocaleString('fr-CM')}</p>
             <p className={`${getTotalQuantity(item) < 10 ? 'text-red-500 font-medium' : ''}`}>
               {getTotalQuantity(item)}
             </p>

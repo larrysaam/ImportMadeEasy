@@ -17,25 +17,27 @@ const { deliveryFee, getCartAmount } = useContext(ShopContext)
             <div className='flex justify-between'>
                 <p>Subtotal</p>
                 <NumberFlow
-                    value={getCartAmount() ? getCartAmount() : 0} 
-                    format={{ 
-                        style: 'currency', 
-                        currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                        maximumFractionDigits: 2 
-                    }} 
-                />         
+                    value={getCartAmount() ? getCartAmount() : 0}
+                    format={{
+                        style: 'currency',
+                        currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }}
+                />
             </div>
             <hr/>
             <div className='flex justify-between'>
                 <p>Shipping fee</p>
                 <NumberFlow
-                    value={deliveryFee ? deliveryFee : 0} 
-                    format={{ 
-                        style: 'currency', 
-                        currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                        maximumFractionDigits: 2 
-                    }} 
-                />            
+                    value={deliveryFee ? deliveryFee : 0}
+                    format={{
+                        style: 'currency',
+                        currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }}
+                />
             </div>
             <div className='text-xs text-gray-500 flex justify-end'>
                 <p>Estimated delivery: 9 days</p>
@@ -45,12 +47,13 @@ const { deliveryFee, getCartAmount } = useContext(ShopContext)
                 <b>Total</b>
                 <NumberFlow
                     className='font-semibold'
-                    value={getCartAmount() === 0 ? 0 : getCartAmount() + deliveryFee} 
-                    format={{ 
-                        style: 'currency', 
-                        currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                        maximumFractionDigits: 2 
-                    }} 
+                    value={getCartAmount() === 0 ? 0 : getCartAmount() + deliveryFee}
+                    format={{
+                        style: 'currency',
+                        currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }}
                 />
             </div>
         </div>

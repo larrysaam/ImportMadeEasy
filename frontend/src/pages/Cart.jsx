@@ -319,12 +319,13 @@ const Cart = () => {
                       {/* Mobile price - only shows on mobile */}
                       <p className='block sm:hidden text-sm font-medium text-brand'>
                         <NumberFlow
-                          value={productData.price * item.quantity} 
-                          format={{ 
-                            style: 'currency', 
-                            currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                            maximumFractionDigits: 2 
-                          }} 
+                          value={productData.price * item.quantity}
+                          format={{
+                            style: 'currency',
+                            currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          }}
                         />
                       </p>
                       <div className='flex items-center gap-2 flex-wrap'>
@@ -447,12 +448,13 @@ const Cart = () => {
                   {/* Desktop price - hidden on mobile */}
                   <NumberFlow
                     className='hidden sm:block w-fit mx-auto text-brand'
-                    value={productData.price * item.quantity} 
-                    format={{ 
-                      style: 'currency', 
-                      currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                      maximumFractionDigits: 2 
-                    }} 
+                    value={productData.price * item.quantity}
+                    format={{
+                      style: 'currency',
+                      currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    }}
                   />
 
                   {/* Desktop delete button - hidden on mobile */}
@@ -489,7 +491,7 @@ const Cart = () => {
             <div className='flex flex-col gap-2 text-sm'>
               <div className='flex justify-between'>
                 <p>Shipping Fee:</p>
-                <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || '€'}900</p>
+                <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} 900</p>
               </div>
               <div className='flex justify-between'>
                 <p>Estimated Delivery Time:</p>
@@ -541,11 +543,12 @@ const Cart = () => {
                 <p className="text-sm text-brand font-medium">
                   <NumberFlow
                     value={product.price || 0}
-                    format={{ 
-                      style: 'currency', 
-                      currency: import.meta.env.VITE_CURRENCY || 'EUR', 
-                      maximumFractionDigits: 2 
-                    }} 
+                    format={{
+                      style: 'currency',
+                      currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    }}
                   />
                 </p>
               </div>
