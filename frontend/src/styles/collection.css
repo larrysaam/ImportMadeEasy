@@ -1,0 +1,329 @@
+/* Collection Page Mobile-Friendly Text Styles */
+
+/* Mobile text improvements */
+@media (max-width: 640px) {
+  /* Better font sizes for mobile */
+  .mobile-text-xs {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+  }
+
+  .mobile-text-sm {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  /* Improved readability */
+  .mobile-readable {
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  /* Better touch targets */
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+  }
+
+  /* Compact spacing for mobile */
+  .mobile-compact {
+    padding: 0.5rem 0.75rem;
+    margin: 0.25rem 0;
+  }
+
+  /* Filter section improvements */
+  .filter-mobile {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.75rem;
+  }
+
+  /* Pagination improvements */
+  .pagination-mobile {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    min-width: 60px;
+  }
+
+  /* Product grid text */
+  .product-text-mobile {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tablet-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .tablet-spacing {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* General mobile-friendly improvements */
+.collection-text {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Better contrast for mobile */
+@media (max-width: 640px) {
+  .mobile-contrast {
+    color: #374151; /* Darker gray for better readability */
+  }
+
+  .mobile-muted {
+    color: #6B7280; /* Slightly darker muted text */
+  }
+}
+
+/* Smooth transitions for text changes */
+.text-transition {
+  transition: font-size 0.2s ease, line-height 0.2s ease;
+}
+
+/* Focus improvements for accessibility */
+.mobile-focus:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Better button text for mobile */
+@media (max-width: 640px) {
+  .btn-mobile-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+  }
+}
+
+/* Improved label spacing */
+.label-mobile {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Better checkbox/form text */
+.form-text-mobile {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+/* Responsive heading adjustments */
+@media (max-width: 640px) {
+  .heading-mobile {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+}
+
+/* Status text improvements */
+.status-text-mobile {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Better pagination text */
+.pagination-text {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Improved filter section typography */
+.filter-section-mobile {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.filter-section-mobile .filter-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #374151;
+}
+
+.filter-section-mobile .filter-option {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #4B5563;
+}
+
+/* Product count text */
+.product-count-mobile {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6B7280;
+}
+
+/* Sort dropdown text */
+.sort-dropdown-mobile {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* No products message */
+.no-products-mobile {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  text-align: center;
+  color: #6B7280;
+}
+
+/* Loading text */
+.loading-text-mobile {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+/* Error text */
+.error-text-mobile {
+  font-size: 0.75rem;
+  color: #DC2626;
+  font-weight: 500;
+}
+
+/* Success text */
+.success-text-mobile {
+  font-size: 0.75rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Utility classes for consistent mobile typography */
+.mobile-title {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #111827;
+}
+
+.mobile-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.mobile-body {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: #4B5563;
+}
+
+.mobile-caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #6B7280;
+}
+
+.mobile-small {
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  color: #9CA3AF;
+}
+
+/* ProductItem mobile enhancements */
+@media (max-width: 640px) {
+  /* Product name text improvements */
+  .product-name-mobile {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 500;
+    color: #374151;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Product price text improvements */
+  .product-price-mobile {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Pre-order badge mobile */
+  .preorder-badge-mobile {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    letter-spacing: 0.025em;
+  }
+
+  /* Better touch targets for product items */
+  .product-item-mobile {
+    min-height: 44px;
+    padding: 0.25rem;
+  }
+
+  /* Improved spacing for mobile product cards */
+  .product-card-mobile {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Better image aspect ratio text overlay */
+  .product-overlay-mobile {
+    font-size: 0.75rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Tablet-specific improvements */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .product-name-tablet {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .product-price-tablet {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+}
+
+/* Product item hover improvements for all devices */
+.product-item-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-item-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Better focus states for accessibility */
+.product-item-focus:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Text truncation utilities for product names */
+.text-truncate-mobile {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-truncate-mobile-multiline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

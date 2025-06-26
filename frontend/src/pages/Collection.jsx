@@ -204,11 +204,11 @@ const Collection = () => {
   }
 
   return (
-    <div className='flex flex-col px-4 sm:px-8 md:flex-row gap-1 sm:gap-10 pt-10 border-t animate-fade animate-duration-500'>
+    <div className='flex flex-col px-3 sm:px-4 md:px-8 md:flex-row gap-1 sm:gap-10 pt-6 sm:pt-10 border-t animate-fade animate-duration-500'>
       {/* Mobile Filter Header */}
       <div className='min-w-60'>
         <div className="flex justify-between items-center">
-          <p onClick={() => setShowFilter(!showFilter)} className='my-2 text-xl flex items-center cursor-pointer gap-2'>
+          <p onClick={() => setShowFilter(!showFilter)} className='my-2 text-lg sm:text-xl flex items-center cursor-pointer gap-2 font-medium'>
             FILTERS
             <img 
               src={assets.arrow} 
@@ -232,12 +232,12 @@ const Collection = () => {
         <div className={`${showFilter ? '' : 'hidden'} md:block`}>
           {/* Category Filter */}
           <div className={`border border-gray-300 pl-5 py-3 mt-6 ${showFilter ? '' : 'hidden'} md:block`}>
-            <p className='mb-3 text-sm font-medium'>CATEGORIES</p>
+            <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>CATEGORIES</p>
             <div className='flex flex-col gap-3 text-sm font-light text-gray-700'>
               {["Men", "Women", "Kids"].map(cat => (
                 <div key={cat} className="items-center flex space-x-2">
                   <Checkbox id={cat} onCheckedChange={() => toggleCategory(cat)} checked={selectedCategory.includes(cat)} />
-                  <label htmlFor={cat} className="text-sm leading-none">{cat}</label>
+                  <label htmlFor={cat} className="text-sm leading-relaxed cursor-pointer">{cat}</label>
                 </div>
               ))}
             </div>
@@ -245,7 +245,7 @@ const Collection = () => {
 
           {/* Subcategory Filter */}
           <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} md:block`}>
-            <p className='mb-3 text-sm font-medium'>TYPE</p>
+            <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>TYPE</p>
             <div className='flex flex-col gap-3 text-sm font-light text-gray-700'>
               {availableSubcategories.map(subCat => (
                 <div key={subCat} className="items-center flex space-x-2">
@@ -254,9 +254,9 @@ const Collection = () => {
                     onCheckedChange={() => toggleSubCategory(subCat)} 
                     checked={selectedSubCategory.includes(subCat)}
                   />
-                  <label 
-                    htmlFor={subCat} 
-                    className="text-sm leading-none capitalize"
+                  <label
+                    htmlFor={subCat}
+                    className="text-sm leading-relaxed capitalize cursor-pointer"
                   >
                     {subCat}
                   </label>
@@ -264,7 +264,7 @@ const Collection = () => {
               ))}
             </div>
             {availableSubcategories.length === 0 && (
-              <p className="text-sm text-gray-500 italic">
+              <p className="text-xs sm:text-sm text-gray-500 italic leading-relaxed">
                 Select a category to see available types
               </p>
             )}
@@ -272,23 +272,23 @@ const Collection = () => {
 
           {/* Bestseller Filter */}
           <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} md:block`}>
-            <p className='mb-3 text-sm font-medium'>EXTRAS</p>
+            <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>EXTRAS</p>
             <div className="items-center flex space-x-2">
               <Checkbox id="Bestseller" onCheckedChange={() => setBestsellerOnly(!bestsellerOnly)} checked={bestsellerOnly} />
-              <label htmlFor="Bestseller" className="text-sm leading-none font-light">Bestsellers</label>
+              <label htmlFor="Bestseller" className="text-sm leading-relaxed font-light cursor-pointer">Bestsellers</label>
             </div>
           </div>
 
           {/* Preorder Filter */}
           <div className={`border border-gray-300 pl-5 py-3 mt-6 hidden md:block`}>
-            <p className='mb-3 text-sm font-medium'>PRODUCT TYPE</p>
+            <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>PRODUCT TYPE</p>
             <div className="items-center flex space-x-2">
               <Checkbox 
                 id="Preorder" 
                 onCheckedChange={handlePreorderChange}
                 checked={preorderOnly}
               />
-              <label htmlFor="Preorder" className="text-sm leading-none font-light">
+              <label htmlFor="Preorder" className="text-sm leading-relaxed font-light cursor-pointer">
                 Pre-order Only
               </label>
             </div>
@@ -298,23 +298,26 @@ const Collection = () => {
 
       {/* Products Section */}
       <div className='flex-1'>
-        <div className='flex justify-between text-base sm:text-2xl mb-4'>
+        <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4'>
           <Title 
             text1={isPreorder ? 'PRE' : 'ALL'} 
             text2={isPreorder ? 'ORDERS' : 'COLLECTIONS'} 
           />
           
           {/* Product Sort Dropdown */}
-          <Select defaultValue='relevant' onValueChange={setSortType} className='border-2 border-gray-300 text-sm px-2'>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relevant">Sort by: Relevant</SelectItem>
-              <SelectItem value="low-high">Sort by: Low to High</SelectItem>
-              <SelectItem value="high-low">Sort by: High to Low</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className='flex items-center gap-2'>
+            <span className='text-xs sm:text-sm text-gray-600 hidden sm:block'>Sort by:</span>
+            <Select defaultValue='relevant' onValueChange={setSortType} className='border-2 border-gray-300 text-sm px-2'>
+              <SelectTrigger className="w-[140px] sm:w-[160px] lg:w-[180px] text-xs sm:text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevant" className="text-xs sm:text-sm">Relevant</SelectItem>
+                <SelectItem value="low-high" className="text-xs sm:text-sm">Low to High</SelectItem>
+                <SelectItem value="high-low" className="text-xs sm:text-sm">High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Product Grid */}
@@ -322,26 +325,29 @@ const Collection = () => {
           <div>
             {/* Products count and pagination info */}
             {totalProducts > 0 && (
-              <div className='flex justify-between items-center mb-4 text-sm text-gray-600'>
-                <p>
+              <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 text-xs sm:text-sm text-gray-600'>
+                <p className='font-medium'>
                   Showing {startIndex + 1}-{Math.min(endIndex, totalProducts)} of {totalProducts} products
                 </p>
                 {totalPages > 1 && (
-                  <p>
+                  <p className='text-gray-500'>
                     Page {currentPage} of {totalPages}
                   </p>
                 )}
               </div>
             )}
 
-            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 gap-y-14'>
+            <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 gap-y-8 sm:gap-y-14'>
               {currentProducts.map((item) => (
                 <ProductItem key={item._id} id={item._id} name={item.name} price={item.price} image={item.image} />
               ))}
             </div>
 
             {!filterProducts.length && (
-              <p className='text-center text-gray-600 mt-5'>Sorry, no products were found! Please try another search.</p>
+              <div className='col-span-full text-center py-8'>
+                <p className='text-sm sm:text-base text-gray-600 mb-2'>Sorry, no products were found!</p>
+                <p className='text-xs sm:text-sm text-gray-500'>Please try adjusting your filters or search terms.</p>
+              </div>
             )}
 
             {/* Pagination Controls */}
@@ -352,23 +358,23 @@ const Collection = () => {
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                       currentPage === 1
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-black text-white hover:bg-gray-800'
                     }`}
                   >
-                    ← Previous
+                    ← Prev
                   </button>
 
-                  <span className='text-sm text-gray-600'>
-                    Page {currentPage} of {totalPages}
+                  <span className='text-xs sm:text-sm text-gray-600 font-medium'>
+                    {currentPage} of {totalPages}
                   </span>
 
                   <button
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                       currentPage === totalPages
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-black text-white hover:bg-gray-800'
@@ -384,7 +390,7 @@ const Collection = () => {
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                       currentPage === 1
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -412,14 +418,14 @@ const Collection = () => {
                           <button
                             key={1}
                             onClick={() => handlePageChange(1)}
-                            className='px-3 py-2 rounded-md text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            className='px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                           >
                             1
                           </button>
                         )
                         if (startPage > 2) {
                           pages.push(
-                            <span key="ellipsis1" className='px-2 py-2 text-gray-500'>
+                            <span key="ellipsis1" className='px-1 py-1 sm:px-2 sm:py-2 text-xs sm:text-sm text-gray-500'>
                               ...
                             </span>
                           )
@@ -432,7 +438,7 @@ const Collection = () => {
                           <button
                             key={i}
                             onClick={() => handlePageChange(i)}
-                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            className={`px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                               i === currentPage
                                 ? 'bg-black text-white'
                                 : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -447,7 +453,7 @@ const Collection = () => {
                       if (endPage < totalPages) {
                         if (endPage < totalPages - 1) {
                           pages.push(
-                            <span key="ellipsis2" className='px-2 py-2 text-gray-500'>
+                            <span key="ellipsis2" className='px-1 py-1 sm:px-2 sm:py-2 text-xs sm:text-sm text-gray-500'>
                               ...
                             </span>
                           )
@@ -456,7 +462,7 @@ const Collection = () => {
                           <button
                             key={totalPages}
                             onClick={() => handlePageChange(totalPages)}
-                            className='px-3 py-2 rounded-md text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            className='px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                           >
                             {totalPages}
                           </button>
@@ -471,7 +477,7 @@ const Collection = () => {
                   <button
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                       currentPage === totalPages
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -483,8 +489,8 @@ const Collection = () => {
 
                 {/* Go to page input - only show if there are many pages */}
                 {totalPages > 10 && (
-                  <div className='flex items-center gap-2 mt-4'>
-                    <span className='text-sm text-gray-600'>Go to page:</span>
+                  <div className='flex flex-col sm:flex-row sm:items-center gap-2 mt-4 pt-4 border-t border-gray-200'>
+                    <span className='text-xs sm:text-sm text-gray-600'>Go to page:</span>
                     <form onSubmit={handleGoToPage} className='flex items-center gap-2'>
                       <input
                         type='number'
@@ -492,12 +498,12 @@ const Collection = () => {
                         max={totalPages}
                         value={goToPage}
                         onChange={(e) => setGoToPage(e.target.value)}
-                        className='w-16 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent'
+                        className='w-14 sm:w-16 px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent'
                         placeholder='1'
                       />
                       <button
                         type='submit'
-                        className='px-3 py-1 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors'
+                        className='px-3 py-1 text-xs sm:text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors'
                       >
                         Go
                       </button>
