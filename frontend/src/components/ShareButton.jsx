@@ -9,7 +9,6 @@ import {
   generateTwitterUrl,
   generateTelegramUrl,
   generateEmailUrl,
-  generateShareUrl,
   shareNative,
   copyToClipboard,
   trackShareEvent
@@ -21,11 +20,9 @@ const ShareButton = ({ product, selectedColor, activeImage, currency }) => {
   const [shareUrl, setShareUrl] = useState('')
 
   useEffect(() => {
-    // Generate share URL with active image and color parameters for better link previews
-    const baseUrl = window.location.origin + window.location.pathname
-    const shareUrlWithParams = generateShareUrl(baseUrl, activeImage, selectedColor)
-    setShareUrl(shareUrlWithParams)
-  }, [activeImage, selectedColor])
+    // Get current page URL
+    setShareUrl(window.location.href)
+  }, [])
 
   // Generate share text using utilities
   const shareText = product ? formatProductShareText(product, currency, selectedColor) : ''

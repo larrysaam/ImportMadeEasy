@@ -10,25 +10,8 @@ const MetaTags = ({ product, selectedColor, activeImage, currency }) => {
     // Prepare meta data
     const title = `${product.name} - ImportMadeEasy`
     const description = product.description || `${product.name} available for ${currency} ${product.price?.toLocaleString('fr-CM')}. Shop now at ImportMadeEasy!`
-
-    // Prioritize activeImage (currently displayed image) for link previews
-    let image = ''
-    if (activeImage) {
-      // Use the currently active/displayed image
-      image = activeImage
-    } else if (selectedColor && selectedColor.colorImages && selectedColor.colorImages.length > 0) {
-      // Fallback to first image of selected color
-      image = selectedColor.colorImages[0]
-    } else if (product.image && product.image.length > 0) {
-      // Final fallback to first product image
-      image = product.image[0]
-    }
-
+    const image = activeImage || (product.image && product.image[0]) || ''
     const price = `${currency} ${product.price?.toLocaleString('fr-CM')}`
-
-    // Add color info to description if a color is selected
-    const colorInfo = selectedColor ? ` Available in ${selectedColor.colorName}.` : ''
-    const fullDescription = description + colorInfo
     
     // Update document title
     document.title = title
@@ -48,12 +31,12 @@ const MetaTags = ({ product, selectedColor, activeImage, currency }) => {
     }
 
     // Basic meta tags
-    updateMetaTag('description', fullDescription, false)
+    updateMetaTag('description', description, false)
     updateMetaTag('keywords', `${product.name}, fashion, shopping, ImportMadeEasy, ${product.category}, ${product.subcategory}`, false)
 
     // Open Graph meta tags for Facebook, WhatsApp, etc.
     updateMetaTag('og:title', title)
-    updateMetaTag('og:description', fullDescription)
+    updateMetaTag('og:description', description)
     updateMetaTag('og:image', image)
     updateMetaTag('og:url', currentUrl)
     updateMetaTag('og:type', 'product')
@@ -71,18 +54,14 @@ const MetaTags = ({ product, selectedColor, activeImage, currency }) => {
     // Twitter Card meta tags
     updateMetaTag('twitter:card', 'summary_large_image', false)
     updateMetaTag('twitter:title', title, false)
-    updateMetaTag('twitter:description', fullDescription, false)
+    updateMetaTag('twitter:description', description, false)
     updateMetaTag('twitter:image', image, false)
     updateMetaTag('twitter:site', '@ImportMadeEasy', false)
 
     // WhatsApp specific (uses Open Graph)
     updateMetaTag('og:image:width', '1200')
     updateMetaTag('og:image:height', '630')
-    updateMetaTag('og:image:alt', `${product.name}${selectedColor ? ` in ${selectedColor.colorName}` : ''} - ${price}`)
-
-    // Additional image meta tags for better preview
-    updateMetaTag('og:image:type', 'image/jpeg')
-    updateMetaTag('og:image:secure_url', image)
+    updateMetaTag('og:image:alt', `${product.name} - ${price}`)
 
     // Additional structured data for better rich snippets
     const structuredData = {
@@ -90,7 +69,7 @@ const MetaTags = ({ product, selectedColor, activeImage, currency }) => {
       "@type": "Product",
       "name": product.name,
       "image": image,
-      "description": fullDescription,
+      "description": description,
       "brand": {
         "@type": "Brand",
         "name": "ImportMadeEasy"

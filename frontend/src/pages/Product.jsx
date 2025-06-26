@@ -14,7 +14,6 @@ import ReviewSection from '@/components/ReviewSection'
 import PhotoUpload from '@/components/UserPhotos/PhotoUpload';
 import ShareButton from '@/components/ShareButton';
 import MetaTags from '@/components/MetaTags';
-import ShareDebugger from '@/components/ShareDebugger';
 
 const Product = () => {
 
@@ -309,22 +308,13 @@ const Product = () => {
                 </div>
 
                 {/* Share Button */}
-                <div className="flex-shrink-0 mt-2 flex gap-2">
+                <div className="flex-shrink-0 mt-2">
                   <ShareButton
                     product={productData}
                     selectedColor={selectedColor}
                     activeImage={activeImage}
                     currency={currency}
                   />
-                  {/* Debug component - remove in production */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <ShareDebugger
-                      product={productData}
-                      selectedColor={selectedColor}
-                      activeImage={activeImage}
-                      currency={currency}
-                    />
-                  )}
                 </div>
               </div>
             </div>
