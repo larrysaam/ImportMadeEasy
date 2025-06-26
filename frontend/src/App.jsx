@@ -26,6 +26,7 @@ import AffiliateDashboard from '@/pages/AffiliateDashboard';
 import ReferralBanner from '@/components/ReferralBanner';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import PWADebugger from '@/components/PWADebugger';
 
 const App = () => {
   const { pathname } = useLocation();
@@ -63,6 +64,7 @@ const App = () => {
           </Routes>
         <Footer/>
         <PWAInstallPrompt />
+        <PWADebugger />
     </div>
   )
 }

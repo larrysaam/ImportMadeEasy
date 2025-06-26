@@ -4,11 +4,17 @@
 export const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
+      console.log('Attempting to register service worker...')
+
       const registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       })
 
       console.log('Service Worker registered successfully:', registration)
+
+      // Wait for the service worker to be ready
+      await navigator.serviceWorker.ready
+      console.log('Service Worker is ready')
 
       // Handle service worker updates
       registration.addEventListener('updatefound', () => {
