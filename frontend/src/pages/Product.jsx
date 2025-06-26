@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input"
 import ReviewSection from '@/components/ReviewSection'
 import PhotoUpload from '@/components/UserPhotos/PhotoUpload';
+import ShareButton from '@/components/ShareButton';
+import MetaTags from '@/components/MetaTags';
 
 const Product = () => {
 
@@ -236,6 +238,14 @@ const Product = () => {
 
   return (
     <div className='border-t-2 pt-6 sm:pt-10 animate-fade animate-duration-500 mx-2 sm:mx-4 md:mx-8 lg:mx-16 xl:mx-24'>
+      {/* Meta Tags for Social Sharing */}
+      <MetaTags
+        product={productData}
+        selectedColor={selectedColor}
+        activeImage={activeImage}
+        currency={currency}
+      />
+
       <div>
         {/* ----------- Product Data ----------- */}
         <div className='flex gap-4 sm:gap-12 md:gap-20 flex-col sm:flex-row'>
@@ -281,18 +291,32 @@ const Product = () => {
           {/* ----------- Product Info ----------- */}
           <div className='flex-1 px-2 sm:px-0'>
             <div className="flex flex-col gap-2">
-              <h1 className='font-medium text-xl sm:text-2xl mt-2'>{productData?.name}</h1>
-              {productData?.label && productData.label !== '' && (
-                <span className={`
-                  inline-block w-fit px-3 py-1 text-sm font-medium rounded-full
-                  ${productData.label === 'New model' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-purple-100 text-purple-800'
-                  }
-                `}>
-                  {productData.label}
-                </span>
-              )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h1 className='font-medium text-xl sm:text-2xl mt-2'>{productData?.name}</h1>
+                  {productData?.label && productData.label !== '' && (
+                    <span className={`
+                      inline-block w-fit px-3 py-1 text-sm font-medium rounded-full mt-2
+                      ${productData.label === 'New model'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-purple-100 text-purple-800'
+                      }
+                    `}>
+                      {productData.label}
+                    </span>
+                  )}
+                </div>
+
+                {/* Share Button */}
+                <div className="flex-shrink-0 mt-2">
+                  <ShareButton
+                    product={productData}
+                    selectedColor={selectedColor}
+                    activeImage={activeImage}
+                    currency={currency}
+                  />
+                </div>
+              </div>
             </div>
             <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {productData?.price?.toLocaleString('fr-CM')}</p>
             <p className='mt-3 sm:mt-5 text-gray-500 text-sm sm:text-base'>{productData?.description}</p>

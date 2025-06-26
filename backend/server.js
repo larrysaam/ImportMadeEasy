@@ -15,6 +15,7 @@ import reviewRoutes from './routes/reviewRoutes.js'
 import photoRouter from './routes/PhotoRoute.js'
 import affiliateRouter from './routes/affiliateRoute.js'
 import mesombRouter from './routes/mesombRoute.js'
+import metaRouter from './routes/metaRoute.js'
 
 //App config
 
@@ -44,6 +45,7 @@ app.use('/api/reviews', reviewRoutes)
 app.use('/api/photos', photoRouter)
 app.use('/api/affiliate', affiliateRouter)
 app.use('/api/mesomb', mesombRouter)
+app.use('/meta', metaRouter)
 
 app.get('/', (req, res) => {
     res.send("API working")
