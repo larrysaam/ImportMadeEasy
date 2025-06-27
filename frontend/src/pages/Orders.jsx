@@ -110,7 +110,7 @@ const Orders = () => {
   if (isLoading) {
     return <div className='px-4 sm:px-14 my-10 gap-6 flex justify-center items-center'>
       <div className="w-6 h-6 border-4 border-t-gray-800 border-gray-300 rounded-full animate-spin"></div>
-      <p className="text-center text-gray-600">Loading your orders...</p>
+      <p className="text-center text-gray-600 text-sm sm:text-base">Loading your orders...</p>
     </div>
   }
 
@@ -133,50 +133,52 @@ const Orders = () => {
 
   return (
     <div className='px-4 sm:px-14 border-t pt-16 animate-fade animate-duration-500'>
-      <div className='flex justify-between items-center mb-8'>
-        <div className='text-2xl'>
+      <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8'>
+        <div className='text-xl sm:text-2xl'>
           <Title text1='MY' text2='ORDERS' />
         </div>
-        
+
         <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] text-sm sm:text-base">
             <SelectValue placeholder="Filter orders" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="orders">Regular Orders</SelectItem>
-            <SelectItem value="preorders">Pre-orders</SelectItem>
+            <SelectItem value="orders" className="text-sm sm:text-base">Regular Orders</SelectItem>
+            <SelectItem value="preorders" className="text-sm sm:text-base">Pre-orders</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {filteredOrders.length === 0 ? (
-        <p className="text-center text-gray-500 mt-6 text-lg">
-          {filter === 'orders'
-            ? "You don't have any regular orders."
-            : "You don't have any pre-orders."
-          } <br /> 
-          <span className="text-blue-600 cursor-pointer hover:underline" onClick={() => window.location.href = '/'}>
+        <div className="text-center text-gray-500 mt-6 px-4">
+          <p className="text-sm sm:text-base lg:text-lg mb-2">
+            {filter === 'orders'
+              ? "You don't have any regular orders."
+              : "You don't have any pre-orders."
+            }
+          </p>
+          <span className="text-blue-600 cursor-pointer hover:underline text-sm sm:text-base" onClick={() => window.location.href = '/'}>
             Start shopping now!
           </span>
-        </p>
+        </div>
       ) : (
         <>
           {/* Order items */}
           {currentItems.map((item, index) => (
             <div key={index} className='py-4 border-y text-gray-700 flex flex-col md:flex-row
             md:items-center md:justify-between gap-4'>
-              <div className='flex items-center gap-6 text-sm'>
-                <img src={(filter === 'preorders')? item.items[0].image : item.image?.[0]} alt="" className='w-16 sm:w-20' />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className='sm:text-base font-medium'>{item.name}</p>
+              <div className='flex items-start gap-3 sm:gap-6 text-sm'>
+                <img src={(filter === 'preorders')? item.items[0].image : item.image?.[0]} alt="" className='w-14 sm:w-16 md:w-20 flex-shrink-0' />
+                <div className='flex-1 min-w-0'>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                    <p className='text-sm sm:text-base font-medium leading-tight'>{item.name}</p>
                     {item.type === 'preorder' && (
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded">Pre-order</span>
+                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded self-start">Pre-order</span>
                     )}
                   </div>
-                  <div className='flex flex-wrap items-center gap-3 mt-1 text-base text-gray-700'>
-                    <p>{currency} {((filter === 'preorders')? item.items[0].price : item.price)?.toLocaleString('fr-CM')}</p>
-                    <p>Quantity: {(filter === 'preorders')? item.items[0].quantity : item.quantity}</p>
+                  <div className='flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs sm:text-sm text-gray-700'>
+                    <p className='font-medium text-gray-900'>{currency} {((filter === 'preorders')? item.items[0].price : item.price)?.toLocaleString('fr-CM')}</p>
+                    <p>Qty: {(filter === 'preorders')? item.items[0].quantity : item.quantity}</p>
                     <p>Size: {(filter === 'preorders')? item.items[0].size : item.size}</p>
                     {/* Display color if available */}
                     {((filter === 'preorders' && item.items[0].color) || (filter === 'orders' && item.color)) && (
@@ -188,36 +190,41 @@ const Orders = () => {
                       </div>
                     )}
                   </div>
-                  <p>{`Date: `} 
-                    <span className='text-gray-400'>{new Date((filter === 'preorders')? item.createdAt : item.date).toLocaleString()}</span>
-                  </p>
-                  <p>{`Payment: `} 
-                    <span className='text-gray-400'>{item.paymentMethod}</span>
-                  </p>
+                  <div className='mt-2 space-y-1'>
+                    <p className='text-xs sm:text-sm'>
+                      <span className='text-gray-600'>Date: </span>
+                      <span className='text-gray-500'>{new Date((filter === 'preorders')? item.createdAt : item.date).toLocaleDateString()}</span>
+                    </p>
+                    <p className='text-xs sm:text-sm'>
+                      <span className='text-gray-600'>Payment: </span>
+                      <span className='text-gray-500'>{item.paymentMethod}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className='md:w-1/2 flex justify-between items-center'>
+              <div className='md:w-1/2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-3 md:mt-0'>
                 <div className='flex items-center gap-2'>
                   <p className={`min-w-2 h-2 rounded-full ${
                     item.status === 'cancelled' ? 'bg-red-500' :
                     item.status === 'ready' ? 'bg-green-500' : 'bg-yellow-500'
                   }`}></p>
-                  <p className='text-sm md:text-base'>{item.status}</p>
+                  <p className='text-sm sm:text-base font-medium capitalize'>{item.status}</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {item.type === 'preorder' && !['cancelled', 'ready'].includes(item.status) && (
-                    <button 
+                    <button
                       onClick={() => handleDeletePreorder(item._id, item.status)}
-                      className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
+                      className="text-red-500 hover:text-red-700 p-1.5 sm:p-2 rounded-full hover:bg-red-50 transition-colors"
                       disabled={deletePreorderMutation.isPending}
+                      title="Cancel preorder"
                     >
-                      <BsTrash size={16} />
+                      <BsTrash size={14} className="sm:w-4 sm:h-4" />
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={refetchOrders}
-                    className={`border px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 flex items-center gap-2
-                      ${deletePreorderMutation.isPending ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : ''}`}
+                    className={`border px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 flex items-center gap-2
+                      ${deletePreorderMutation.isPending ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'hover:bg-gray-50'}`}
                     disabled={deletePreorderMutation.isPending}
                   >
                     Track Order
@@ -229,24 +236,24 @@ const Orders = () => {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-8 pb-8">
+            <div className="flex justify-center items-center gap-1 sm:gap-2 mt-8 pb-8">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`p-2 rounded-lg transition-colors ${
-                  currentPage === 1 
-                    ? 'text-gray-400 cursor-not-allowed' 
+                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                  currentPage === 1
+                    ? 'text-gray-400 cursor-not-allowed'
                     : 'hover:bg-gray-100'
                 }`}
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={16} className="sm:w-5 sm:h-5" />
               </button>
 
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i + 1}
                   onClick={() => handlePageChange(i + 1)}
-                  className={`w-8 h-8 rounded-lg transition-colors ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
                     currentPage === i + 1
                       ? 'bg-black text-white'
                       : 'hover:bg-gray-100'
@@ -259,13 +266,13 @@ const Orders = () => {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg transition-colors ${
-                  currentPage === totalPages 
-                    ? 'text-gray-400 cursor-not-allowed' 
+                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                  currentPage === totalPages
+                    ? 'text-gray-400 cursor-not-allowed'
                     : 'hover:bg-gray-100'
                 }`}
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={16} className="sm:w-5 sm:h-5" />
               </button>
             </div>
           )}

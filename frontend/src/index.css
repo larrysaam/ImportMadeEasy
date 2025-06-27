@@ -28,6 +28,11 @@
     padding-bottom: 4rem; /* 64px - height of bottom nav */
   }
 
+  /* Remove bottom padding on product pages since bottom nav is hidden */
+  body.product-page {
+    padding-bottom: 0;
+  }
+
  }
 
  

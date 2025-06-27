@@ -102,13 +102,13 @@ const Cart = () => {
   if (cartData.length == 0) {
     return ( 
       <div className='px-4 sm:px-14 min-h-[50vh] flex flex-col items-center'>
-        <div className='text-2xl mb-3 self-start'>
+        <div className='text-xl sm:text-2xl mb-3 self-start'>
           <Title text1='YOUR' text2='CART'/>
         </div>
-        <div className='my-auto text-lg flex flex-col items-center'>
-          <p>Your cart is empty! Try to add some items first.</p>
+        <div className='my-auto text-sm sm:text-base lg:text-lg flex flex-col items-center'>
+          <p className='text-center'>Your cart is empty! Try to add some items first.</p>
           <Link to='/collection' 
-            className='bg-black text-white mt-4 px-4 py-2 w-fit transistion-all duration-500 hover:bg-slate-700'>
+            className='bg-black text-white text-sm sm:text-base mt-4 px-4 py-2 w-fit transistion-all duration-500 hover:bg-slate-700'>
             Go shopping!
           </Link>
         </div>
@@ -237,7 +237,7 @@ const Cart = () => {
 
   return (
     <div className='px-4 sm:px-14 border-t pt-14 animate-fade animate-duration-500'>
-      <div className='text-2xl mb-3'>
+      <div className='text-xl sm:text-2xl mb-3'>
         <Title text1='YOUR' text2='CART'/>
       </div>
 
@@ -297,7 +297,7 @@ const Cart = () => {
                       {/* Make product name clickable */}
                       <p 
                         onClick={() => navigate(`/product/${item.id}`)}
-                        className='text-sm sm:text-lg font-medium cursor-pointer hover:text-blue-600 transition-colors'
+                        className='text-sm sm:text-base lg:text-lg font-medium cursor-pointer hover:text-blue-600 transition-colors'
                       >
                         {productData.name}
                       </p>
@@ -317,7 +317,7 @@ const Cart = () => {
                         </div>
                       )}
                       {/* Mobile price - only shows on mobile */}
-                      <p className='block sm:hidden text-sm font-medium text-brand'>
+                      <p className='block sm:hidden text-xs sm:text-sm font-medium text-brand'>
                         <NumberFlow
                           value={productData.price * item.quantity}
                           format={{
@@ -345,7 +345,7 @@ const Cart = () => {
                                         backgroundColor: item.colorHex || '#ccc'
                                       }}
                                     ></div>
-                                    <span className="truncate text-sm">{item.color}</span>
+                                    <span className="truncate text-xs sm:text-sm">{item.color}</span>
                                   </div>
                                 )}
                               </SelectValue>
@@ -361,7 +361,7 @@ const Cart = () => {
                                       className="w-4 h-4 rounded-full border border-gray-300 shadow-sm flex-shrink-0"
                                       style={{ backgroundColor: colorOption.colorHex }}
                                     ></div>
-                                    <span className="text-sm">{colorOption.colorName}</span>
+                                    <span className="text-xs sm:text-sm">{colorOption.colorName}</span>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -438,7 +438,7 @@ const Cart = () => {
                         </button>
                       </div>
                       {inventoryErrors[`${item.id}-${item.size}-${item.colorHex || 'default'}`] && (
-                        <span className="text-red-500 text-xs font-bold">
+                        <span className="text-red-500 text-xs sm:text-sm font-bold">
                           {inventoryErrors[`${item.id}-${item.size}-${item.colorHex || 'default'}`]}
                         </span>
                       )}
@@ -487,8 +487,8 @@ const Cart = () => {
           <CartTotal />
           
           <div className='mt-4 p-4 bg-gray-50 rounded-md'>
-            <h3 className='font-medium mb-2 text-sm'>Delivery Details</h3>
-            <div className='flex flex-col gap-2 text-sm'>
+            <h3 className='font-medium mb-2 text-xs sm:text-sm'>Delivery Details</h3>
+            <div className='flex flex-col gap-2 text-xs sm:text-sm'>
               <div className='flex justify-between'>
                 <p>Shipping Fee:</p>
                 <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} 900</p>
@@ -504,7 +504,7 @@ const Cart = () => {
             <button 
               onClick={() => (token ? navigate('/place-order') : navigate('/login', { state: { from: '/cart' } }))} 
               disabled={hasStockError}
-              className={`bg-brand text-white text-sm my-8 px-4 py-3 transition-all duration-500 
+              className={`bg-brand text-white text-xs sm:text-sm my-8 px-4 py-3 transition-all duration-500
                 ${hasStockError 
                   ? 'opacity-50 cursor-not-allowed' 
                   : 'hover:bg-brand-dark'
@@ -537,10 +537,10 @@ const Cart = () => {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <p className="text-sm font-medium transition-colors">
+                <p className="text-xs sm:text-sm font-medium transition-colors">
                   {product.name || 'Product'}
                 </p>
-                <p className="text-sm text-brand font-medium">
+                <p className="text-xs sm:text-sm text-brand font-medium">
                   <NumberFlow
                     value={product.price || 0}
                     format={{

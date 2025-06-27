@@ -14,6 +14,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SearchBar from "@/components/layout/SearchBar";
 import BottomNavbar from "@/components/layout/BottomNavbar";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { Toaster } from 'sonner'
 import Verify from "@/pages/Verify";
 import NotFound from '@/components/NotFound'
@@ -65,6 +66,7 @@ const App = () => {
           </Routes>
         <Footer/>
         <BottomNavbar />
+        <WhatsAppButton />
         <PWAInstallPrompt />
         <PWADebugger />
     </div>

@@ -77,6 +77,14 @@ const Product = () => {
     return productData?.image || [];
   }, [selectedColor, productData]);
 
+  // Add/remove class to body for product page styling
+  useEffect(() => {
+    document.body.classList.add('product-page')
+    return () => {
+      document.body.classList.remove('product-page')
+    }
+  }, [])
+
   // Get current sizes for the selected color, filtering out 'N/A' sizes
   const currentSizes = useMemo(() => {
     if (selectedColor && selectedColor.sizes && selectedColor.sizes.length > 0) {
@@ -237,7 +245,7 @@ const Product = () => {
   }
 
   return (
-    <div className='border-t-2 pt-6 sm:pt-10 animate-fade animate-duration-500 mx-2 sm:mx-4 md:mx-8 lg:mx-16 xl:mx-24'>
+    <div className='border-t-2 pt-6 sm:pt-10 pb-20 sm:pb-6 animate-fade animate-duration-500 mx-2 sm:mx-4 md:mx-8 lg:mx-16 xl:mx-24'>
       {/* Meta Tags for Social Sharing */}
       <MetaTags
         product={productData}
@@ -435,7 +443,7 @@ const Product = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className='w-full sm:w-auto fixed bottom-0 left-0 sm:relative p-4 sm:p-0 bg-white border-t sm:border-0 z-10'>
+            <div className='w-full sm:w-auto fixed bottom-0 left-0 sm:relative p-4 sm:p-0 bg-white border-t sm:border-0 z-10 shadow-lg sm:shadow-none'>
               {productData?.preorder ? (
                 hasPreordered ? (
                   <button 

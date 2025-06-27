@@ -7,6 +7,9 @@ const BottomNavbar = () => {
   const { getCartCount, token, navigate } = useContext(ShopContext)
   const location = useLocation()
 
+  // Hide bottom navbar on product pages (mobile only)
+  const isProductPage = location.pathname.includes('/product')
+
   // Navigation items configuration
   const navItems = [
     {
@@ -66,10 +69,10 @@ const BottomNavbar = () => {
   return (
     <>
       {/* Spacer to prevent content from being hidden behind fixed navbar */}
-      <div className="h-16 sm:hidden"></div>
-      
+      <div className={`h-16 sm:hidden ${isProductPage ? 'hidden' : ''}`}></div>
+
       {/* Bottom Navigation - Mobile Only */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden shadow-lg">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden shadow-lg ${isProductPage ? 'hidden' : ''}`}>
         {/* Subtle brand accent line */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-light via-brand to-brand-dark"></div>
         <div className="grid grid-cols-4 h-16">

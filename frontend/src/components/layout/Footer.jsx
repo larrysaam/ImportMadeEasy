@@ -5,7 +5,7 @@ import { FaWhatsapp, FaInstagram, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 const Footer = () => {
   return (
-    <div className='pl-4 pr-4 sm:pl-8 sm:pr-8 lg:pl-16 lg:pr-16 bg-white'>
+    <div className='pl-4 pr-4 hidden sm:block sm:pl-8 sm:pr-8 lg:pl-16 lg:pr-16 bg-white'>
       <div className='flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10 md:mt-40 text-sm'>
         <div>
           <img src={assets.IMELogo} alt='logo' className='mb-5 w-24' />

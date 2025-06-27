@@ -159,7 +159,7 @@ const Orders = ({token}) => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-t-blue-600 border-gray-300 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading orders...</p>
+            <p className="text-gray-600 text-sm sm:text-base">Loading orders...</p>
           </div>
         </div>
       </div>
@@ -172,14 +172,14 @@ const Orders = ({token}) => {
       <div className="px-3 sm:px-6 lg:px-8 pb-4">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="text-red-500 text-lg mb-2">Error loading orders</div>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <div className="text-red-500 text-base sm:text-lg mb-2">Error loading orders</div>
+            <p className="text-gray-600 text-sm sm:text-base mb-4">{error}</p>
             <button
               onClick={() => {
                 setLoading(true)
                 fetchAllOrders()
               }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors"
             >
               Try Again
             </button>
@@ -198,7 +198,7 @@ const Orders = ({token}) => {
         {/* Status Filter - Mobile optimized */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Filter by Status:</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Filter by Status:</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Select status" />
@@ -231,7 +231,7 @@ const Orders = ({token}) => {
       <div className="space-y-4">
         {currentOrders.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-2">
+            <div className="text-gray-500 text-sm sm:text-base lg:text-lg mb-2">
               {filteredOrders.length === 0 
                 ? (statusFilter === 'All' 
                     ? 'No orders found' 
@@ -242,7 +242,7 @@ const Orders = ({token}) => {
             {statusFilter !== 'All' && (
               <button
                 onClick={() => setStatusFilter('All')}
-                className="text-blue-600 hover:text-blue-800 underline"
+                className="text-blue-600 hover:text-blue-800 underline text-sm sm:text-base"
               >
                 Show all orders
               </button>
@@ -302,7 +302,7 @@ const Orders = ({token}) => {
                         {/* Color indicator with actual color */}
                         {item.color && (
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-600 text-xs">Color:</span>
+                            <span className="text-gray-600 text-xs sm:text-sm">Color:</span>
                             <div className="flex items-center gap-1">
                               <div 
                                 className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 shadow-sm"
@@ -311,7 +311,7 @@ const Orders = ({token}) => {
                                 }}
                                 title={item.color}
                               ></div>
-                              <span className="text-gray-800 font-medium text-xs">{item.color}</span>
+                              <span className="text-gray-800 font-medium text-xs sm:text-sm">{item.color}</span>
                             </div>
                           </div>
                         )}
@@ -319,13 +319,13 @@ const Orders = ({token}) => {
                         {/* Size and Quantity on same line for mobile */}
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1">
-                            <span className="text-gray-600 text-xs">Size:</span>
-                            <span className="text-gray-800 font-medium text-xs">{item.size}</span>
+                            <span className="text-gray-600 text-xs sm:text-sm">Size:</span>
+                            <span className="text-gray-800 font-medium text-xs sm:text-sm">{item.size}</span>
                           </div>
                           
                           <div className="flex items-center gap-1">
-                            <span className="text-gray-600 text-xs">Qty:</span>
-                            <span className="text-gray-800 font-medium text-xs">{item.quantity}</span>
+                            <span className="text-gray-600 text-xs sm:text-sm">Qty:</span>
+                            <span className="text-gray-800 font-medium text-xs sm:text-sm">{item.quantity}</span>
                           </div>
                         </div>
                       </div>
@@ -347,7 +347,7 @@ const Orders = ({token}) => {
 
             {/* Customer Details - Mobile optimized */}
             <div className="border-t pt-3">
-              <h4 className="font-medium text-sm mb-2 text-gray-800">Customer Details</h4>
+              <h4 className="font-medium text-xs sm:text-sm mb-2 text-gray-800">Customer Details</h4>
               <div className="bg-gray-50 rounded-lg p-3 text-xs sm:text-sm space-y-1">
                 <p className='font-medium text-gray-900'>
                   {order.address.firstName + " " + order.address.lastName}
@@ -367,7 +367,7 @@ const Orders = ({token}) => {
 
             {/* Order Summary - Mobile optimized */}
             <div className="border-t pt-3">
-              <h4 className="font-medium text-sm mb-2 text-gray-800">Order Summary</h4>
+              <h4 className="font-medium text-xs sm:text-sm mb-2 text-gray-800">Order Summary</h4>
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="space-y-1">
@@ -384,7 +384,7 @@ const Orders = ({token}) => {
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-base sm:text-lg font-bold text-gray-900">
+                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                     Total: {currency}{order.amount}
                   </p>
                 </div>
@@ -393,10 +393,10 @@ const Orders = ({token}) => {
 
             {/* Actions - Mobile optimized */}
             <div className='border-t pt-3'>
-              <h4 className="font-medium text-sm mb-3 text-gray-800">Actions</h4>
+              <h4 className="font-medium text-xs sm:text-sm mb-3 text-gray-800">Actions</h4>
               <div className='flex flex-col gap-3'>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Update Status:</label>
+                  <label className="block text-xs sm:text-sm text-gray-600 mb-1">Update Status:</label>
                   <Select 
                     defaultValue={order.status} 
                     value={order.status} 
