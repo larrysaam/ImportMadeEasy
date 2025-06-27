@@ -13,6 +13,7 @@ import Orders from "@/pages/Orders";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SearchBar from "@/components/layout/SearchBar";
+import BottomNavbar from "@/components/layout/BottomNavbar";
 import { Toaster } from 'sonner'
 import Verify from "@/pages/Verify";
 import NotFound from '@/components/NotFound'
@@ -63,6 +64,7 @@ const App = () => {
             <Route path='*' element={<NotFound/>} />
           </Routes>
         <Footer/>
+        <BottomNavbar />
         <PWAInstallPrompt />
         <PWADebugger />
     </div>

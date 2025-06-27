@@ -13,6 +13,7 @@ import {
 import { assets } from '@/assets/assets'
 import { CollectionSkeleton } from '@/features/collection/CollectionSkeleton'
 import { useSearchParams } from 'react-router-dom'
+import ScrollToTop from '@/components/ScrollToTop'
 
 const Collection = () => {
   const { products, search, showSearch, isLoading } = useContext(ShopContext)
@@ -30,11 +31,6 @@ const Collection = () => {
   const [availableSubcategories, setAvailableSubcategories] = useState([])
   const [preorderOnly, setPreorderOnly] = useState(false)
   const isPreorder = searchParams.get('preorder') === 'true'
-
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [goToPage, setGoToPage] = useState('')
-  const productsPerPage = 15
 
   // Toggle category filter
   const toggleCategory = (value) => {
@@ -103,16 +99,8 @@ const Collection = () => {
     }
 
     setFilterProducts(filtered)
-    // Reset to first page when filters change
-    setCurrentPage(1)
+    // No pagination needed - show all filtered products
   }
-
-  // Calculate pagination values
-  const totalProducts = filterProducts.length
-  const totalPages = Math.ceil(totalProducts / productsPerPage)
-  const startIndex = (currentPage - 1) * productsPerPage
-  const endIndex = startIndex + productsPerPage
-  const currentProducts = filterProducts.slice(startIndex, endIndex)
 
   // Sort products
   const sortProduct = () => {
@@ -174,34 +162,7 @@ const Collection = () => {
     window.history.pushState({}, '', checked ? `?${newParams.toString()}` : window.location.pathname)
   }
 
-  // Pagination handlers
-  const handlePageChange = (page) => {
-    setCurrentPage(page)
-    setGoToPage('') // Clear the go-to-page input
-    // Scroll to top when page changes
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      handlePageChange(currentPage - 1)
-    }
-  }
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      handlePageChange(currentPage + 1)
-    }
-  }
-
-  const handleGoToPage = (e) => {
-    e.preventDefault()
-    const page = parseInt(goToPage)
-    if (page >= 1 && page <= totalPages) {
-      handlePageChange(page)
-      setGoToPage('')
-    }
-  }
 
   return (
     <div className='flex flex-col px-3 sm:px-4 md:px-8 md:flex-row gap-1 sm:gap-10 pt-6 sm:pt-10 border-t animate-fade animate-duration-500'>
@@ -323,22 +284,17 @@ const Collection = () => {
         {/* Product Grid */}
         {isLoading ? <CollectionSkeleton /> : (
           <div>
-            {/* Products count and pagination info */}
-            {totalProducts > 0 && (
+            {/* Products count */}
+            {filterProducts.length > 0 && (
               <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 text-xs sm:text-sm text-gray-600'>
                 <p className='font-medium'>
-                  Showing {startIndex + 1}-{Math.min(endIndex, totalProducts)} of {totalProducts} products
+                  Showing {filterProducts.length} product{filterProducts.length !== 1 ? 's' : ''}
                 </p>
-                {totalPages > 1 && (
-                  <p className='text-gray-500'>
-                    Page {currentPage} of {totalPages}
-                  </p>
-                )}
               </div>
             )}
 
             <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-4 gap-y-8 sm:gap-y-14'>
-              {currentProducts.map((item) => (
+              {filterProducts.map((item) => (
                 <ProductItem key={item._id} id={item._id} name={item.name} price={item.price} image={item.image} />
               ))}
             </div>
@@ -350,171 +306,12 @@ const Collection = () => {
               </div>
             )}
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className='mt-8'>
-                {/* Mobile Pagination - Simple Previous/Next */}
-                <div className='flex justify-between items-center sm:hidden mb-4'>
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                      currentPage === 1
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-black text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    ← Prev
-                  </button>
-
-                  <span className='text-xs sm:text-sm text-gray-600 font-medium'>
-                    {currentPage} of {totalPages}
-                  </span>
-
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                      currentPage === totalPages
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-black text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    Next →
-                  </button>
-                </div>
-
-                {/* Desktop Pagination - Full Controls */}
-                <div className='hidden sm:flex justify-center items-center gap-2'>
-                  {/* Previous Button */}
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                      currentPage === 1
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Previous
-                  </button>
-
-                  {/* Page Numbers */}
-                  <div className='flex gap-1'>
-                    {(() => {
-                      const pages = []
-                      const maxVisiblePages = 5
-                      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
-                      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
-
-                      // Adjust start page if we're near the end
-                      if (endPage - startPage + 1 < maxVisiblePages) {
-                        startPage = Math.max(1, endPage - maxVisiblePages + 1)
-                      }
-
-                      // Add first page and ellipsis if needed
-                      if (startPage > 1) {
-                        pages.push(
-                          <button
-                            key={1}
-                            onClick={() => handlePageChange(1)}
-                            className='px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                          >
-                            1
-                          </button>
-                        )
-                        if (startPage > 2) {
-                          pages.push(
-                            <span key="ellipsis1" className='px-1 py-1 sm:px-2 sm:py-2 text-xs sm:text-sm text-gray-500'>
-                              ...
-                            </span>
-                          )
-                        }
-                      }
-
-                      // Add visible page numbers
-                      for (let i = startPage; i <= endPage; i++) {
-                        pages.push(
-                          <button
-                            key={i}
-                            onClick={() => handlePageChange(i)}
-                            className={`px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                              i === currentPage
-                                ? 'bg-black text-white'
-                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            {i}
-                          </button>
-                        )
-                      }
-
-                      // Add last page and ellipsis if needed
-                      if (endPage < totalPages) {
-                        if (endPage < totalPages - 1) {
-                          pages.push(
-                            <span key="ellipsis2" className='px-1 py-1 sm:px-2 sm:py-2 text-xs sm:text-sm text-gray-500'>
-                              ...
-                            </span>
-                          )
-                        }
-                        pages.push(
-                          <button
-                            key={totalPages}
-                            onClick={() => handlePageChange(totalPages)}
-                            className='px-2 py-1 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                          >
-                            {totalPages}
-                          </button>
-                        )
-                      }
-
-                      return pages
-                    })()}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={handleNextPage}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                      currentPage === totalPages
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
-
-                {/* Go to page input - only show if there are many pages */}
-                {totalPages > 10 && (
-                  <div className='flex flex-col sm:flex-row sm:items-center gap-2 mt-4 pt-4 border-t border-gray-200'>
-                    <span className='text-xs sm:text-sm text-gray-600'>Go to page:</span>
-                    <form onSubmit={handleGoToPage} className='flex items-center gap-2'>
-                      <input
-                        type='number'
-                        min='1'
-                        max={totalPages}
-                        value={goToPage}
-                        onChange={(e) => setGoToPage(e.target.value)}
-                        className='w-14 sm:w-16 px-2 py-1 text-xs sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent'
-                        placeholder='1'
-                      />
-                      <button
-                        type='submit'
-                        className='px-3 py-1 text-xs sm:text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors'
-                      >
-                        Go
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   )
 }
