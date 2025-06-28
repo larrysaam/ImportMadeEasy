@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ShopContext } from '@/context/ShopContext'
-import { Home, ShoppingCart, Package, User, LogIn } from 'lucide-react'
+import { Home, ShoppingCart, Package, User, LogIn, Store } from 'lucide-react'
 
 const BottomNavbar = () => {
   const { getCartCount, token, navigate } = useContext(ShopContext)
@@ -20,19 +20,26 @@ const BottomNavbar = () => {
       requireAuth: false
     },
     {
+      id: 'orders',
+      label: 'Orders',
+      icon: Package,
+      path: '/orders',
+      requireAuth: true
+    },
+    {
+      id: 'collection',
+      label: 'Collection',
+      icon: Store,
+      path: '/collection',
+      requireAuth: false
+    },
+    {
       id: 'cart',
       label: 'Cart',
       icon: ShoppingCart,
       path: '/cart',
       requireAuth: false,
       badge: getCartCount()
-    },
-    {
-      id: 'orders',
-      label: 'Orders',
-      icon: Package,
-      path: '/orders',
-      requireAuth: true
     },
     {
       id: 'profile',
@@ -75,7 +82,7 @@ const BottomNavbar = () => {
       <div className={`fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 sm:hidden shadow-lg ${isProductPage ? 'hidden' : ''}`}>
         {/* Subtle brand accent line */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-brand-light via-brand to-brand-dark"></div>
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)

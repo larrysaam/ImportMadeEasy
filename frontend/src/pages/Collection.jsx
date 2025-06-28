@@ -70,11 +70,23 @@ const Collection = () => {
       filtered = filtered.filter(item => item.preorder === true)
     }
 
-    // Search filter
+    // Search filter - search by name and keywords
     if (showSearch && search) {
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(search.toLowerCase())
-      )
+      const searchTerm = search.toLowerCase()
+      filtered = filtered.filter(item => {
+        // Search in product name
+        const nameMatch = item.name.toLowerCase().includes(searchTerm)
+
+        // Search in keywords array
+        const keywordMatch = item.keywords && Array.isArray(item.keywords)
+          ? item.keywords.some(keyword =>
+              keyword.toLowerCase().includes(searchTerm)
+            )
+          : false
+
+        // Return true if either name or keywords match
+        return nameMatch || keywordMatch
+      })
     }
 
     // Category filter

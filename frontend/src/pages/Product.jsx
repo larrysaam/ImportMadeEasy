@@ -302,17 +302,48 @@ const Product = () => {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <h1 className='font-medium text-xl sm:text-2xl mt-2'>{productData?.name}</h1>
-                  {productData?.label && productData.label !== '' && (
-                    <span className={`
-                      inline-block w-fit px-3 py-1 text-sm font-medium rounded-full mt-2
-                      ${productData.label === 'New model'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
-                      }
-                    `}>
-                      {productData.label}
-                    </span>
-                  )}
+
+                  {/* Product badges section */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {/* Label badge */}
+                    {productData?.label && productData.label !== '' && (
+                      <span className={`
+                        inline-block w-fit px-3 py-1 text-sm font-medium rounded-full
+                        ${productData.label === 'New model'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
+                        }
+                      `}>
+                        {productData.label}
+                      </span>
+                    )}
+
+                    {/* Country of Origin badge */}
+                    {productData?.countryOfOrigin && (
+                      <span className={`
+                        inline-block w-fit px-3 py-1 text-sm font-medium rounded-full
+                        ${productData.countryOfOrigin === 'Nigeria'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                        }
+                      `}>
+                        Made in {productData.countryOfOrigin}
+                      </span>
+                    )}
+
+                    {/* Product Type badge */}
+                    {/* {productData?.productType && (
+                      <span className={`
+                        inline-block w-fit px-3 py-1 text-sm font-medium rounded-full
+                        ${productData.productType === 'Express'
+                          ? 'bg-orange-100 text-orange-800'
+                          : 'bg-gray-100 text-gray-800'
+                        }
+                      `}>
+                        {productData.productType}
+                      </span>
+                    )} */}
+                  </div>
                 </div>
 
                 {/* Share Button */}

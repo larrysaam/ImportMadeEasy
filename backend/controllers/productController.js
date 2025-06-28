@@ -54,7 +54,11 @@ const addProduct = async (req, res) => {
       preorder,
       label,
       hasSizes,
-      sizeType
+      sizeType,
+      keywords,
+      countryOfOrigin,
+      deliveryMethod,
+      productType
     } = req.body;
 
     // Convert string boolean values to actual booleans
@@ -99,6 +103,16 @@ const addProduct = async (req, res) => {
       };
     }));
 
+    // Process keywords array
+    let processedKeywords = [];
+    if (keywords) {
+      if (typeof keywords === 'string') {
+        processedKeywords = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      } else if (Array.isArray(keywords)) {
+        processedKeywords = keywords.filter(k => k && k.trim().length > 0);
+      }
+    }
+
     // Create new product with explicit boolean values
     const newProduct = new productModel({
       name,
@@ -114,6 +128,10 @@ const addProduct = async (req, res) => {
       label: (label === 'none' || !label) ? '' : label,
       hasSizes: hasSizes === 'true' || hasSizes === true,
       sizeType: sizeType || 'clothing',
+      keywords: processedKeywords,
+      countryOfOrigin: countryOfOrigin || 'Nigeria',
+      deliveryMethod: deliveryMethod || 'Standard',
+      productType: productType || 'Normal',
       date: new Date()
     });
 
@@ -345,6 +363,15 @@ const updateProduct = async (req, res) => {
     // Normalize label value if it exists
     if (updates.label !== undefined) {
       updates.label = (updates.label === 'none' || !updates.label) ? '' : updates.label;
+    }
+
+    // Process keywords array if provided
+    if (updates.keywords !== undefined) {
+      if (typeof updates.keywords === 'string') {
+        updates.keywords = updates.keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+      } else if (Array.isArray(updates.keywords)) {
+        updates.keywords = updates.keywords.filter(k => k && k.trim().length > 0);
+      }
     }
 
     // Ensure subcategory and subsubcategory have default values if not provided

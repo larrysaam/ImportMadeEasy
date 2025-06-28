@@ -82,6 +82,25 @@ const productSchema = new Schema({
       enum: ['clothing', 'shoes'],
       default: 'clothing'
     },
+    keywords: {
+      type: [String],
+      default: []
+    },
+    countryOfOrigin: {
+      type: String,
+      enum: ['Nigeria', 'China'],
+      required: true
+    },
+    deliveryMethod: {
+      type: String,
+      enum: ['Standard', 'Express', 'Premium'],
+      default: 'Standard'
+    },
+    productType: {
+      type: String,
+      enum: ['Express', 'Normal'],
+      default: 'Normal'
+    },
     reviews: [{
       userId: {
         type: mongoose.Schema.Types.ObjectId,

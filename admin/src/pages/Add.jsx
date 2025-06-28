@@ -187,6 +187,10 @@ const Add = ({token}) => {
     label: z.string(),
     sizeType: z.string(),
     hasSizes: z.boolean(),
+    keywords: z.string().optional(),
+    countryOfOrigin: z.enum(['Nigeria', 'China'], {message: "Please select country of origin"}),
+    deliveryMethod: z.enum(['Standard', 'Express', 'Premium'], {message: "Please select delivery method"}),
+    productType: z.enum(['Express', 'Normal'], {message: "Please select product type"}),
     colors: z.array(colorVariantSchema)
       .min(1, "At least one color variant is required"),
   })
@@ -206,6 +210,10 @@ const Add = ({token}) => {
       label: "",
       sizeType: 'clothing',
       hasSizes: true, // New field to control if product has sizes
+      keywords: "",
+      countryOfOrigin: "Nigeria",
+      deliveryMethod: "Standard",
+      productType: "Normal",
       colors: [],
     },
   })
@@ -435,6 +443,10 @@ const Add = ({token}) => {
               label: productData.label === '' || !productData.label ? "none" : productData.label,
               sizeType: productData.sizeType || 'clothing',
               hasSizes: productData.hasSizes !== false, // Default to true if not specified
+              keywords: Array.isArray(productData.keywords) ? productData.keywords.join(', ') : (productData.keywords || ""),
+              countryOfOrigin: productData.countryOfOrigin || "Nigeria",
+              deliveryMethod: productData.deliveryMethod || "Standard",
+              productType: productData.productType || "Normal",
               colors: [], // Will be populated by append below
             });
 
@@ -853,6 +865,106 @@ const Add = ({token}) => {
                   value={field.value || ''}
                   onChange={(e) => field.onChange(e.target.value)}
                 />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+
+      {/* New Fields Section */}
+      <div className='flex flex-col sm:flex-row gap-4 w-full sm:gap-8 mb-4'>
+        <div>
+          <p className='mb-2'>Keywords <span className="text-gray-500 text-sm">(comma separated)</span></p>
+          <Controller
+            name="keywords"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder="e.g. fashion, trendy, summer"
+                  className='w-full px-3 py-2 max-w-[300px]'
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Country of Origin</p>
+          <Controller
+            name="countryOfOrigin"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select
+                  value={field.value || "Nigeria"}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Nigeria">Nigeria</SelectItem>
+                    <SelectItem value="China">China</SelectItem>
+                  </SelectContent>
+                </Select>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className='flex flex-col sm:flex-row gap-4 w-full sm:gap-8 mb-4'>
+        <div>
+          <p className='mb-2'>Delivery Method</p>
+          <Controller
+            name="deliveryMethod"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select
+                  value={field.value || "Standard"}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard">Standard</SelectItem>
+                    <SelectItem value="Express">Express</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Product Type</p>
+          <Controller
+            name="productType"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Select
+                  value={field.value || "Normal"}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                    <SelectItem value="Express">Express</SelectItem>
+                  </SelectContent>
+                </Select>
                 {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
               </>
             )}

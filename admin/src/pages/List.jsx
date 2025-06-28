@@ -3,7 +3,7 @@ import axios from 'axios'
 import { backendUrl, currency } from '../App'
 import { toast } from "sonner"
 import { BsPencil, BsTrash } from 'react-icons/bs'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const List = ({token}) => {
   const [list, setList] = useState([])
@@ -13,6 +13,7 @@ const List = ({token}) => {
   const [showLowStock, setShowLowStock] = useState(false)
   const [filterType, setFilterType] = useState('all'); // 'all', 'normal', 'preorder'
   const itemsPerPage = 5
+  const [searchParams] = useSearchParams()
 
   // Move getTotalQuantity to the top before it's used
   const getTotalQuantity = (product) => {
@@ -105,6 +106,15 @@ const List = ({token}) => {
   useEffect(()=> {
     fetchList()
   },[])
+
+  // Sync search term with URL params from navbar
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    if (urlSearch !== searchTerm) {
+      setSearchTerm(urlSearch)
+      setCurrentPage(1) // Reset to first page when search changes
+    }
+  }, [searchParams])
 
   // Update the stats section to include preorder counts
   const getStats = () => {

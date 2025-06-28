@@ -21,7 +21,7 @@ const Navbar = () => {
     Kids: { subcategories: [] }
   })
   const [isLoading, setIsLoading] = useState(true)
-  const { showSearch, setShowSearch, getCartCount, navigate, token, setToken } = useContext(ShopContext)
+  const { showSearch, setShowSearch, search, setSearch, getCartCount, navigate, token, setToken } = useContext(ShopContext)
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -31,6 +31,9 @@ const Navbar = () => {
   }
 
   const location = useLocation()
+
+  // Check if navbar should be visible on mobile (only homepage and collection page)
+  const shouldShowOnMobile = location.pathname === '/' || location.pathname.includes('/collection')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -132,22 +135,20 @@ const Navbar = () => {
   return (
     <>
       {/* Add a spacer div to prevent the navbar from overlapping the content */}
-      <div className="h-[80px]"></div> {/* Adjust the height to match the navbar's height */}
+      <div className={`h-[80px] ${shouldShowOnMobile ? '' : 'sm:block hidden'}`}></div> {/* Adjust the height to match the navbar's height */}
       <div
         id="google_translate_element"
         className={`fixed top-0 left-0 w-full pl-2 pr-2 sm:pl-16 sm:pr-16 z-50 bg-white transition-transform duration-300 ${
           showNavbar ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        } ${shouldShowOnMobile ? '' : 'sm:block hidden'}`}
       >
-        <div className='flex items-center justify-between py-5 font-medium'>
+        {/* Desktop Navbar */}
+        <div className='hidden sm:flex items-center justify-between py-5 font-medium'>
           <Link to='/' className='cursor-pointer'>
             <img src={assets.IMELogo} alt='logo' className='w-16 sm:w-18' />
           </Link>
 
-          {/* div to stretch the navbar */}
-          {/* <div>
-          </div> */}
-          <ul className='hidden sm:flex gap-5 text-sm text-black'>
+          <ul className='flex gap-5 text-sm text-black'>
             {Object.keys(categories).map((category) => (
               <div key={category} className="group relative">
                 <NavLink 
@@ -166,7 +167,7 @@ const Navbar = () => {
               </div>
             ))}
           </ul>
-  
+
           <div className='flex items-center gap-6'>
             {/* Language toggle button */}
             <button 
@@ -185,17 +186,17 @@ const Navbar = () => {
             </button> */}
            
 
-            <img
-              src={assets.search}
-              alt='search-icon'
-              className='w-5 cursor-pointer transition-all duration-300 hover:scale-[125%]'
-              onClick={() => {
-                if (!location.pathname.includes('collection')) {
-                  navigate('/collection')
-                }
-                showSearch ? setShowSearch(!showSearch) : setTimeout(() => setShowSearch(!showSearch), 200)
-              }}
-            />
+            {/* Search icon - only visible on collection page */}
+            {location.pathname.includes('collection') && (
+              <img
+                src={assets.search}
+                alt='search-icon'
+                className='w-5 cursor-pointer transition-all duration-300 hover:scale-[125%]'
+                onClick={() => {
+                  showSearch ? setShowSearch(!showSearch) : setTimeout(() => setShowSearch(!showSearch), 200)
+                }}
+              />
+            )}
             <div className='group relative'>
               <img
                 onClick={() => (token ? null : navigate('/login'))}
@@ -244,7 +245,7 @@ const Navbar = () => {
             >
               <img src={assets.cart} alt='cartIcon' className='w-5 min-w-5 ' />
               <p
-                className='absolute -right-[5px] -bottom-[5px] w-4 text-center 
+                className='absolute -right-[5px] -bottom-[5px] w-4 text-center
                   leading-4 bg-brand text-white aspect-square rounded-full text-[10px]'
               >
                 {getCartCount()}
@@ -254,9 +255,53 @@ const Navbar = () => {
               src={assets.burger}
               onClick={() => setVisible(true)}
               alt='menu-icon'
-              className='w-5 cursor-pointer sm:hidden'
+              className='w-5 cursor-pointer'
             />
           </div>
+        </div>
+
+        {/* Mobile Navbar */}
+        <div className='sm:hidden flex items-center justify-between py-3 px-4 font-medium'>
+          {/* Logo */}
+          <Link to='/' className='cursor-pointer flex-shrink-0'>
+            <img src={assets.IMELogo} alt='logo' className='w-12' />
+          </Link>
+
+          {/* Search Input - Always visible on mobile */}
+          <div className='flex-1 mx-3'>
+            <div className='flex items-center justify-center border border-gray-300
+              px-3 py-2 bg-gray-50 rounded-full relative'>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                type='text'
+                placeholder='Search by name or keywords...'
+                className='flex-1 outline-none bg-inherit text-sm placeholder-gray-500'
+              />
+              {search && (
+                <img
+                  onClick={() => setSearch('')}
+                  src={assets.cross}
+                  alt='clear-search'
+                  className='w-3 cursor-pointer ml-2'
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Cart Button */}
+          <button
+            onClick={() => (navigate('/cart'))}
+            className='relative transition-all duration-300 hover:scale-[125%] flex-shrink-0'
+          >
+            <img src={assets.cart} alt='cartIcon' className='w-5 min-w-5' />
+            <p
+              className='absolute -right-[5px] -bottom-[5px] w-4 text-center
+                leading-4 bg-brand text-white aspect-square rounded-full text-[10px]'
+            >
+              {getCartCount()}
+            </p>
+          </button>
         </div>
       </div>
 
