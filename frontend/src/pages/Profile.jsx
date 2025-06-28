@@ -2,11 +2,11 @@ import React, { useContext, useState, useEffect } from 'react'
 import { ShopContext } from '@/context/ShopContext'
 import { toast } from 'sonner'
 import axios from 'axios'
-import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff } from 'lucide-react'
+import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff, LogOut } from 'lucide-react'
 import { assets } from '@/assets/assets'
 
 const Profile = () => {
-  const { token, backendUrl, navigate } = useContext(ShopContext)
+  const { token, setToken, backendUrl, navigate } = useContext(ShopContext)
   const [activeTab, setActiveTab] = useState('overview')
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -147,6 +147,14 @@ const Profile = () => {
     }
   }
 
+  // Logout function
+  const handleLogout = () => {
+    setToken('')
+    localStorage.removeItem('token')
+    toast.success('Logged out successfully')
+    navigate('/login')
+  }
+
   useEffect(() => {
     if (!token) {
       navigate('/login')
@@ -184,15 +192,26 @@ const Profile = () => {
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand rounded-full flex items-center justify-center flex-shrink-0">
-              <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between space-y-3 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <div className="text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{userInfo.name}</h1>
+                <p className="text-gray-600 text-sm sm:text-base">{userInfo.email}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Member since {formatDate(userInfo.dateJoined)}</p>
+              </div>
             </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{userInfo.name}</h1>
-              <p className="text-gray-600 text-sm sm:text-base">{userInfo.email}</p>
-              <p className="text-xs sm:text-sm text-gray-500">Member since {formatDate(userInfo.dateJoined)}</p>
-            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200 text-sm sm:text-base"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Logout</span>
+            </button>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import express from 'express'
 import multer from 'multer'
-import { getSettings, updateSettings, updateBannerLink } from '../controllers/settingController.js'
+import { getSettings, updateSettings, updateBannerLink, getLegalDocuments } from '../controllers/settingController.js'
 import adminAuth from '../middleware/adminAuth.js'
 
 const router = express.Router()
@@ -20,8 +20,9 @@ const upload = multer({ storage: storage })
 
 router.get('/', adminAuth, getSettings)
 router.get('/user', getSettings)
-router.put('/', 
-  adminAuth, 
+router.get('/legal', getLegalDocuments) // Public route for legal documents
+router.put('/',
+  adminAuth,
   upload.fields([
     { name: 'hero', maxCount: 5 },
     { name: 'banner', maxCount: 1 }

@@ -14,12 +14,17 @@ const signupSchema = z.object({
   name: z.string().min(3, { message: "Name should be longer than 3 sybmols" }),
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  acceptTerms: z.boolean().refine(val => val === true, {
+    message: "You must accept the terms and conditions to continue"
+  }),
 })
 
 const Signup = () => {
 
   const { token, setToken, navigate, backendUrl, affiliateCode, affiliateInfo, setAffiliateCode, setAffiliateInfo } = useContext(ShopContext)
   const [showPassword, setShowPassword] = useState(false)
+  const [termsAndConditions, setTermsAndConditions] = useState('')
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   const {
     control,
@@ -32,7 +37,8 @@ const Signup = () => {
     defaultValues: {
       name: "",
       email: "",
-      password: ""
+      password: "",
+      acceptTerms: false
     },
   })
 
@@ -85,6 +91,22 @@ const Signup = () => {
   // Referral tracking is now handled in ShopContext
 
   const password = watch('password') || '';
+
+  // Fetch terms and conditions
+  useEffect(() => {
+    const fetchTermsAndConditions = async () => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/settings/legal`)
+        if (response.data.success) {
+          setTermsAndConditions(response.data.legal.termsAndConditions)
+        }
+      } catch (error) {
+        console.error('Error fetching terms and conditions:', error)
+      }
+    }
+
+    fetchTermsAndConditions()
+  }, [backendUrl])
 
   return (
     <form
@@ -182,6 +204,36 @@ const Signup = () => {
         </div>
       </div>
 
+      {/* Terms and Conditions Checkbox */}
+      <div className='w-full'>
+        <Controller
+          name="acceptTerms"
+          control={control}
+          render={({ field }) => (
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                id="acceptTerms"
+                checked={field.value}
+                onChange={field.onChange}
+                className="mt-1 h-4 w-4 text-brand focus:ring-brand border-gray-300 rounded"
+              />
+              <label htmlFor="acceptTerms" className="text-sm text-gray-700 leading-5">
+                I agree to the{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-brand hover:text-brand-dark underline"
+                >
+                  Terms and Conditions
+                </button>
+              </label>
+            </div>
+          )}
+        />
+        {errors.acceptTerms && <p className="text-red-500 text-sm mt-1">{errors.acceptTerms.message}</p>}
+      </div>
+
       {/* Submit Button with Loading State */}
       <button 
         type="submit"
@@ -199,6 +251,48 @@ const Signup = () => {
           </>
         ) : "Sign Up"}
       </button>
+
+      {/* Terms and Conditions Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">Terms and Conditions</h3>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {termsAndConditions ? (
+                <div className="prose prose-sm max-w-none">
+                  {termsAndConditions.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-3 text-gray-700 leading-relaxed">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">
+                  Terms and conditions are not available at the moment.
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end p-4 border-t">
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

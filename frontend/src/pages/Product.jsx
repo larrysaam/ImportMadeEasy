@@ -14,12 +14,13 @@ import ReviewSection from '@/components/ReviewSection'
 import PhotoUpload from '@/components/UserPhotos/PhotoUpload';
 import ShareButton from '@/components/ShareButton';
 import MetaTags from '@/components/MetaTags';
+import { ShoppingCart } from 'lucide-react';
 
 const Product = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const { productId } = useParams();
-  const { products, currency, addToCart, token, navigate, isLoading } = useContext(ShopContext)
+  const { products, currency, addToCart, token, navigate, isLoading, getCartCount } = useContext(ShopContext)
   const [productData, setProductData] = useState(null)
   const [activeImage, setActiveImage] = useState('')
   const [selectedColor, setSelectedColor] = useState(null)
@@ -253,6 +254,19 @@ const Product = () => {
         activeImage={activeImage}
         currency={currency}
       />
+
+      {/* Floating Cart Button - Mobile Only */}
+      <button
+        onClick={() => navigate('/cart')}
+        className="fixed top-4 right-4 z-50 sm:hidden w-12 h-12 bg-brand text-white rounded-full shadow-lg hover:bg-brand-dark transition-all duration-200 flex items-center justify-center"
+      >
+        <ShoppingCart className="w-5 h-5" />
+        {getCartCount() > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+            {getCartCount()}
+          </span>
+        )}
+      </button>
 
       <div>
         {/* ----------- Product Data ----------- */}

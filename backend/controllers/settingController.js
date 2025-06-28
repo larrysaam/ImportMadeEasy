@@ -38,6 +38,8 @@ export const updateSettings = async (req, res) => {
   try {
     let updateData = {}
 
+    console.log('Received form data:', req.body)
+
     // Convert form data to proper objects
     const formData = Object.fromEntries(
       Object.entries(req.body).map(([key, value]) => {
@@ -48,6 +50,8 @@ export const updateSettings = async (req, res) => {
         }
       })
     )
+
+    console.log('Parsed form data:', formData)
 
     // Handle basic text and currency settings
     if (formData.currency) {
@@ -82,6 +86,13 @@ export const updateSettings = async (req, res) => {
         : formData.herolink
     }
 
+    // Handle legal documents
+    if (formData.legal) {
+      updateData.legal = typeof formData.legal === 'string'
+        ? JSON.parse(formData.legal)
+        : formData.legal
+    }
+
     // Handle file uploads
     if (req.files) {
       if (req.files.banner) {
@@ -92,13 +103,15 @@ export const updateSettings = async (req, res) => {
       }
     }
 
+    console.log('Update data to be applied:', updateData)
+
     const settings = await Setting.findOneAndUpdate(
       {},
       { $set: updateData },
       { new: true, upsert: true }
     )
 
-    console.log('Settings updated:', settings)
+    console.log('Settings updated successfully:', settings)
 
     res.json({
       success: true,
@@ -117,16 +130,48 @@ export const updateSettings = async (req, res) => {
 
 export const getSettings = async (req, res) => {
   try {
+    console.log('Fetching settings...')
     let settings = await Setting.findOne()
-    
+    console.log('Found settings:', settings ? 'Yes' : 'No')
+
     if (!settings) {
+      console.log('Creating new settings document...')
       settings = await Setting.create({
         currency: { name: process.env.CURRENCY || 'XAF', sign: process.env.CURRENCY_SYMBOL || 'FCFA' },
         email: { notifications: 'notifications@example.com' },
-        images: { hero: [], banner: '' }
+        images: { hero: [], banner: '' },
+        text: { banner: '', hero: '' },
+        link: {
+          productId: '',
+          category: '',
+          subcategory: '',
+          subsubcategory: ''
+        },
+        herolink: {
+          productId: '',
+          category: '',
+          subcategory: '',
+          subsubcategory: ''
+        },
+        legal: {
+          privacyPolicy: '',
+          termsAndConditions: ''
+        }
       })
+      console.log('Created new settings:', settings)
     }
-    
+
+    // Ensure legal field exists even in existing documents
+    if (!settings.legal) {
+      console.log('Adding legal field to existing settings...')
+      settings.legal = {
+        privacyPolicy: '',
+        termsAndConditions: ''
+      }
+      await settings.save()
+    }
+
+    console.log('Returning settings with legal field:', !!settings.legal)
     res.json({ success: true, settings })
   } catch (error) {
     console.error('Get settings error:', error)
@@ -175,6 +220,37 @@ export const updateBannerLink = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update banner link'
+    });
+  }
+};
+
+// Get legal documents (public route)
+export const getLegalDocuments = async (req, res) => {
+  try {
+    const settings = await Setting.findOne();
+
+    if (!settings) {
+      return res.json({
+        success: true,
+        legal: {
+          privacyPolicy: '',
+          termsAndConditions: ''
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      legal: settings.legal || {
+        privacyPolicy: '',
+        termsAndConditions: ''
+      }
+    });
+  } catch (error) {
+    console.error('Get legal documents error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get legal documents'
     });
   }
 };

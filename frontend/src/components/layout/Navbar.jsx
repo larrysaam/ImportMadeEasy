@@ -218,7 +218,7 @@ const Navbar = () => {
                           text-gray-600'
                   >
                     <p
-                      onClick={() => toast.info(t('not_implemented'))}
+                      onClick={() => (token ? navigate('/profile'): navigate('/login'))}
                       className='cursor-pointer hover:text-black hover:bg-gray-100 duration-300 py-2 px-5'
                     >
                       {t('my_profile')}

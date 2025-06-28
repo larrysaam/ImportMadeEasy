@@ -6,4 +6,4 @@ export function cn(...inputs) {
 }
 
 // Add the backend URL configuration
-export const backendUrl = import.meta.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+export const backendUrl = import.meta.env.REACT_APP_BACKEND_URL || 'http://localhost:4100';

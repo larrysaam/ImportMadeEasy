@@ -31,6 +31,10 @@ const Settings = ({ token }) => {
       category: '',
       subcategory: '',
       subsubcategory: ''
+    },
+    legal: {
+      privacyPolicy: '',
+      termsAndConditions: ''
     }
   })
 
@@ -57,15 +61,23 @@ const Settings = ({ token }) => {
         })
         console.log('Fetched settings:', response.data)
         if (response.data.success) {
-          setSettings(response.data.settings)
-          setBannerText(response.data.settings.text.banner || '')
+          // Ensure legal field exists
+          const settingsData = {
+            ...response.data.settings,
+            legal: response.data.settings.legal || {
+              privacyPolicy: '',
+              termsAndConditions: ''
+            }
+          }
+          setSettings(settingsData)
+          setBannerText(response.data.settings.text?.banner || '')
           // Set initial link type based on existing settings
-          setLinkType(response.data.settings.link.productId ? 'product' : 'category')
+          setLinkType(response.data.settings.link?.productId ? 'product' : 'category')
           setSelectedLink({
-            productId: response.data.settings.link.productId || '',
-            category: response.data.settings.link.category || '',
-            subcategory: response.data.settings.link.subcategory || '',
-            subsubcategory: response.data.settings.link.subsubcategory || ''
+            productId: response.data.settings.link?.productId || '',
+            category: response.data.settings.link?.category || '',
+            subcategory: response.data.settings.link?.subcategory || '',
+            subsubcategory: response.data.settings.link?.subsubcategory || ''
           })
         }
       } catch (error) {
@@ -117,30 +129,45 @@ const Settings = ({ token }) => {
     try {
       setIsLoading(true)
       const formData = new FormData()
-      formData.append('currency[name]', settings.currency.name)
-      formData.append('currency[sign]', settings.currency.sign)
-      formData.append('email[notifications]', settings.email.notifications)
+      // Handle currency updates
+      formData.append('currency', JSON.stringify({
+        name: settings.currency?.name || '',
+        sign: settings.currency?.sign || ''
+      }))
+
+      // Handle email updates
+      formData.append('email', JSON.stringify({
+        notifications: settings.email?.notifications || ''
+      }))
       
       // Handle text updates
-      formData.append('text[banner]', bannerText)
-      formData.append('text[hero]', settings.text.hero)
+      formData.append('text', JSON.stringify({
+        banner: bannerText,
+        hero: settings.text?.hero || ''
+      }))
       
       // Handle link updates
       formData.append('link', JSON.stringify({
-        productId: settings.link.productId || '',
-        category: settings.link.category || '',
-        subcategory: settings.link.subcategory || '',
-        subsubcategory: settings.link.subsubcategory || ''
+        productId: settings.link?.productId || '',
+        category: settings.link?.category || '',
+        subcategory: settings.link?.subcategory || '',
+        subsubcategory: settings.link?.subsubcategory || ''
       }))
 
       // Handle hero link updates
       formData.append('herolink', JSON.stringify({
-        productId: settings.herolink.productId || '',
-        category: settings.herolink.category || '',
-        subcategory: settings.herolink.subcategory || '',
-        subsubcategory: settings.herolink.subsubcategory || ''
+        productId: settings.herolink?.productId || '',
+        category: settings.herolink?.category || '',
+        subcategory: settings.herolink?.subcategory || '',
+        subsubcategory: settings.herolink?.subsubcategory || ''
       }))
-      
+
+      // Handle legal documents
+      formData.append('legal', JSON.stringify({
+        privacyPolicy: settings.legal?.privacyPolicy || '',
+        termsAndConditions: settings.legal?.termsAndConditions || ''
+      }))
+
       // Handle image uploads
       heroFiles.forEach(file => {
         formData.append('hero', file)
@@ -149,6 +176,12 @@ const Settings = ({ token }) => {
       // Handle banner image
       if (bannerFile) {
         formData.append('banner', bannerFile)
+      }
+
+      // Debug: Log what we're sending
+      console.log('Sending form data:')
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value)
       }
 
       const response = await axios.put(`${backendUrl}/api/settings`, formData, {
@@ -187,12 +220,12 @@ const Settings = ({ token }) => {
         <HeroLinkSection 
           settings={settings}
           onSettingsChange={setSettings}
-          heroText={settings.text.hero}
+          heroText={settings.text?.hero || ''}
           onHeroTextChange={(value) => setSettings(prev => ({
             ...prev,
-            text: { ...prev.text, hero: value }
+            text: { ...(prev.text || {}), hero: value }
           }))}
-          heroLinkType={settings.herolink.productId ? 'product' : 'category'}
+          heroLinkType={settings.herolink?.productId ? 'product' : 'category'}
           onHeroLinkTypeChange={(value) => {
             const newHeroLink = value === 'product' 
               ? { productId: '', category: '', subcategory: '', subsubcategory: '' }
@@ -202,10 +235,10 @@ const Settings = ({ token }) => {
               herolink: newHeroLink
             }))
           }}
-          selectedHeroLink={settings.herolink}
+          selectedHeroLink={settings.herolink || {}}
           onHeroLinkChange={(field, value) => setSettings(prev => ({
             ...prev,
-            herolink: { ...prev.herolink, [field]: value }
+            herolink: { ...(prev.herolink || {}), [field]: value }
           }))}
           products={products}
           categories={categories}
@@ -232,7 +265,51 @@ const Settings = ({ token }) => {
           products={products}
           categories={categories}
         />
-        
+
+        {/* Legal Documents Section */}
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <h3 className="text-lg font-semibold mb-4">Legal Documents</h3>
+
+          {/* Privacy Policy */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Privacy Policy
+            </label>
+            <textarea
+              value={settings.legal?.privacyPolicy || ''}
+              onChange={(e) => setSettings(prev => ({
+                ...prev,
+                legal: { ...(prev.legal || {}), privacyPolicy: e.target.value }
+              }))}
+              rows={10}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-vertical"
+              placeholder="Enter your privacy policy content here..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This will be displayed to users when they view the privacy policy.
+            </p>
+          </div>
+
+          {/* Terms and Conditions */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Terms and Conditions
+            </label>
+            <textarea
+              value={settings.legal?.termsAndConditions || ''}
+              onChange={(e) => setSettings(prev => ({
+                ...prev,
+                legal: { ...(prev.legal || {}), termsAndConditions: e.target.value }
+              }))}
+              rows={10}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-vertical"
+              placeholder="Enter your terms and conditions content here..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Users will be required to accept these terms during signup.
+            </p>
+          </div>
+        </div>
 
         <button
           type="submit"

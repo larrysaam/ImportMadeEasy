@@ -25,8 +25,12 @@ const settingSchema = new mongoose.Schema({
   link: {
     productId: { type: String }, // Default link for banner
     category: { type: String },
-    subcategory: { type: String },  
+    subcategory: { type: String },
     subsubcategory: { type: String }
+  },
+  legal: {
+    privacyPolicy: { type: String, default: '' },
+    termsAndConditions: { type: String, default: '' }
   }
 }, {
   timestamps: true
