@@ -18,6 +18,8 @@ const Placeorder = () => {
   const [mobileNumber, setMobileNumber] = useState('')
   const [mobileService, setMobileService] = useState('MTN')
   const [isProcessingMobile, setIsProcessingMobile] = useState(false)
+  const [savedDeliveryInfo, setSavedDeliveryInfo] = useState(null)
+  const [loadingSavedInfo, setLoadingSavedInfo] = useState(false)
   
   const { navigate, backendUrl, token, cartItems,
     resetCart, getCartAmount, deliveryFee, products } = useContext(ShopContext)
@@ -25,14 +27,50 @@ const Placeorder = () => {
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(orderSchema)
   })
 
+  // Load saved delivery information
+  const loadSavedDeliveryInfo = async () => {
+    if (!token) return
+
+    try {
+      setLoadingSavedInfo(true)
+      const response = await axios.get(`${backendUrl}/api/user/profile`, {
+        headers: { token }
+      })
+
+      if (response.data.success && response.data.deliveryInfo) {
+        const info = response.data.deliveryInfo
+        setSavedDeliveryInfo(info)
+
+        // Auto-fill form if delivery info exists
+        if (info.firstName) {
+          setValue('firstName', info.firstName)
+          setValue('lastName', info.lastName)
+          setValue('email', info.email)
+          setValue('street', info.address)
+          setValue('city', info.city)
+          setValue('state', info.state)
+          setValue('zipcode', info.zipcode)
+          setValue('country', info.country)
+          setValue('phone', info.phone)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved delivery info:', error)
+    } finally {
+      setLoadingSavedInfo(false)
+    }
+  }
+
   useEffect(()=>{
     console.log("Cart Items:  ",cartItems)
-  },[])
+    loadSavedDeliveryInfo()
+  },[token])
 
 
 
@@ -214,6 +252,32 @@ const Placeorder = () => {
         <div className='text-xl sm:text-2xl my-3'>
           <Title text1='DELIVERY' text2='INFORMATION' />
         </div>
+
+        {/* Load Saved Info Button */}
+        {token && (
+          <div className='mb-4'>
+            <button
+              type="button"
+              onClick={loadSavedDeliveryInfo}
+              disabled={loadingSavedInfo}
+              className='flex items-center gap-2 text-sm text-brand hover:text-brand-dark disabled:opacity-50'
+            >
+              {loadingSavedInfo ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin"></div>
+                  Loading saved info...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Use saved delivery information
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         <div className='flex gap-3 justify-between'>
           <div>

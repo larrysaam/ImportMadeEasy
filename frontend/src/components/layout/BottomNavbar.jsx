@@ -45,7 +45,7 @@ const BottomNavbar = () => {
       id: 'profile',
       label: token ? 'Profile' : 'Login',
       icon: token ? User : LogIn,
-      path: token ? '/orders' : '/login', // Redirect to orders if logged in, login if not
+      path: token ? '/profile' : '/login', // Redirect to profile if logged in, login if not
       requireAuth: false
     }
   ]
