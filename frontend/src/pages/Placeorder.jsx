@@ -109,7 +109,7 @@ const Placeorder = () => {
     return {
       address: formData,
       items: orderItems,
-      amount: getCartAmount() + deliveryFee,
+      amount: getCartAmount(), // Delivery fee excluded - paid on delivery
       paymentMethod: 'mobile'
     }
   }
@@ -200,8 +200,8 @@ const Placeorder = () => {
 
       setIsProcessingMobile(true);
 
-      // Calculate total amount
-      const totalAmount = Math.round(getCartAmount() + deliveryFee);
+      // Calculate total amount (excluding delivery fee - paid on delivery)
+      const totalAmount = Math.round(getCartAmount());
 
       // Prepare order data
       const orderPayload = prepareOrderData(formData);
@@ -354,11 +354,19 @@ const Placeorder = () => {
             <div className='flex flex-col gap-2 text-sm'>
               <div className='flex justify-between'>
                 <p>Shipping Fee:</p>
-                <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || '€'}900</p>
+                <div className='text-right'>
+                  <p className='font-medium'>{import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} {deliveryFee}</p>
+                  <p className='text-xs text-orange-600 font-medium'>Pay on delivery</p>
+                </div>
               </div>
               <div className='flex justify-between'>
                 <p>Estimated Delivery Time:</p>
                 <p className='font-medium'>9 days</p>
+              </div>
+              <div className='mt-2 p-2 bg-orange-50 rounded border-l-4 border-orange-400'>
+                <p className='text-xs text-orange-700'>
+                  <strong>Note:</strong> Delivery fee is paid directly to the delivery person when your order arrives.
+                </p>
               </div>
             </div>
           </div>
