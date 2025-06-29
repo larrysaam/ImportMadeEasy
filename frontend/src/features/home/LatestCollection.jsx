@@ -3,16 +3,18 @@ import { ShopContext } from "@/context/ShopContext";
 import Title from "@/components/Title";
 import ProductItem from "@/features/shared/ProductItem";
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 const LatestCollection = () => {
   const { products = [], isLoading } = useContext(ShopContext);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // useMemo to avoid rerenders and shuffle products
   const randomProducts = useMemo(() => {
     const shuffled = [...products]
       .sort(() => Math.random() - 0.5)
-      .slice(0, 30);
+      .slice(0, 10);
     return shuffled;
   }, [products]);
 
@@ -45,6 +47,16 @@ const LatestCollection = () => {
           ))}
         </div>
       )}
+
+      {/* View All Button */}
+      <div className="flex justify-center mt-8">
+        <button
+          onClick={() => navigate('/collection')}
+          className="bg-brand text-white px-8 py-3 rounded-full font-medium text-sm sm:text-base hover:bg-brand-dark transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+        >
+          View All Collections
+        </button>
+      </div>
     </div>
   );
 };

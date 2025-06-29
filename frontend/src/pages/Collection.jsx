@@ -30,8 +30,21 @@ const Collection = () => {
   const [bestsellerOnly, setBestsellerOnly] = useState(false) // Bestseller filter
   const [availableSubcategories, setAvailableSubcategories] = useState([])
   const [preorderOnly, setPreorderOnly] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState('') // Country filter
+  const [selectedCountry, setSelectedCountry] = useState(() => {
+    // Initialize from localStorage or default to empty string
+    return localStorage.getItem('selectedCountry') || ''
+  }) // Country filter
   const isPreorder = searchParams.get('preorder') === 'true'
+
+  // Custom function to update country and persist to localStorage
+  const updateSelectedCountry = (country) => {
+    setSelectedCountry(country)
+    if (country) {
+      localStorage.setItem('selectedCountry', country)
+    } else {
+      localStorage.removeItem('selectedCountry')
+    }
+  }
 
 
   const flagImages = {
@@ -124,7 +137,9 @@ const Collection = () => {
       )
     }
 
-    setFilterProducts(filtered)
+    // Randomize the order of filtered products
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5)
+    setFilterProducts(shuffled)
     // No pagination needed - show all filtered products
   }
 
@@ -224,7 +239,7 @@ const Collection = () => {
           <div className="flex items-center gap-1">
             {/* All Countries Button */}
             <button
-              onClick={() => setSelectedCountry('')}
+              onClick={() => updateSelectedCountry('')}
               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition-all ${
                 selectedCountry === ''
                   ? 'bg-brand text-white shadow-md'
@@ -237,7 +252,7 @@ const Collection = () => {
 
             {/* Nigeria Flag Button */}
             <button
-              onClick={() => setSelectedCountry('Nigeria')}
+              onClick={() => updateSelectedCountry('Nigeria')}
               className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
                 selectedCountry === 'Nigeria'
                   ? 'bg-brand/20 ring-2 ring-brand shadow-md'
@@ -250,7 +265,7 @@ const Collection = () => {
 
             {/* China Flag Button */}
             <button
-              onClick={() => setSelectedCountry('China')}
+              onClick={() => updateSelectedCountry('China')}
               className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
                 selectedCountry === 'China'
                   ? 'bg-brand/20 ring-2 ring-brand shadow-md'
@@ -292,7 +307,7 @@ const Collection = () => {
                 className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
                   selectedCountry === '' ? 'bg-brand/10 border border-brand/20' : ''
                 }`}
-                onClick={() => setSelectedCountry('')}
+                onClick={() => updateSelectedCountry('')}
               >
                 <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
                   🌍
@@ -307,7 +322,7 @@ const Collection = () => {
                 className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
                   selectedCountry === 'Nigeria' ? 'bg-brand/10 border border-brand/20' : ''
                 }`}
-                onClick={() => setSelectedCountry('Nigeria')}
+                onClick={() => updateSelectedCountry('Nigeria')}
               >
                 <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-lg">
                   <img src={flagImages.Nigeria} alt="Nigeria Flag"/>
@@ -322,7 +337,7 @@ const Collection = () => {
                 className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
                   selectedCountry === 'China' ? 'bg-brand/10 border border-brand/20' : ''
                 }`}
-                onClick={() => setSelectedCountry('China')}
+                onClick={() => updateSelectedCountry('China')}
               >
                 <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-lg">
                   <img src={flagImages.China} alt="Nigeria Flag"/>

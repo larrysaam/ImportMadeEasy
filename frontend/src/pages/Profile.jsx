@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react'
 import { ShopContext } from '@/context/ShopContext'
 import { toast } from 'sonner'
 import axios from 'axios'
-import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff, LogOut } from 'lucide-react'
+import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff, LogOut, Users } from 'lucide-react'
 import { assets } from '@/assets/assets'
 
 const Profile = () => {
@@ -51,6 +51,14 @@ const Profile = () => {
     confirmPassword: ''
   })
 
+  // Affiliate program
+  const [affiliateData, setAffiliateData] = useState({
+    isAffiliate: false,
+    affiliateCode: '',
+    referralCount: 0,
+    totalEarnings: 0
+  })
+
   // Fetch user profile data
   const fetchUserProfile = async () => {
     try {
@@ -60,12 +68,15 @@ const Profile = () => {
       })
 
       if (response.data.success) {
-        const { user, stats, recentOrders, deliveryInfo } = response.data
+        const { user, stats, recentOrders, deliveryInfo, affiliateData } = response.data
         setUserInfo(user)
         setStats(stats)
         setRecentOrders(recentOrders)
         if (deliveryInfo) {
           setDeliveryInfo(deliveryInfo)
+        }
+        if (affiliateData) {
+          setAffiliateData(affiliateData)
         }
       } else {
         toast.error(response.data.message)
@@ -80,14 +91,34 @@ const Profile = () => {
 
   // Update user info
   const updateUserInfo = async () => {
+    // Validation
+    if (!userInfo.name || userInfo.name.trim().length < 2) {
+      toast.error('Please enter a valid name (at least 2 characters)')
+      return
+    }
+
+    if (userInfo.phone && userInfo.phone.length < 8) {
+      toast.error('Please enter a valid phone number')
+      return
+    }
+
     try {
-      const response = await axios.put(`${backendUrl}/api/user/update-info`, userInfo, {
+      const response = await axios.put(`${backendUrl}/api/user/update-info`, {
+        name: userInfo.name.trim(),
+        phone: userInfo.phone.trim()
+      }, {
         headers: { token }
       })
 
       if (response.data.success) {
         toast.success('Profile updated successfully')
         setIsEditing(false)
+        // Update the userInfo state with the cleaned data
+        setUserInfo(prev => ({
+          ...prev,
+          name: userInfo.name.trim(),
+          phone: userInfo.phone.trim()
+        }))
       } else {
         toast.error(response.data.message)
       }
@@ -99,13 +130,54 @@ const Profile = () => {
 
   // Save delivery info
   const saveDeliveryInfo = async () => {
+    // Validation
+    if (!deliveryInfo.firstName || deliveryInfo.firstName.trim().length < 2) {
+      toast.error('Please enter a valid first name')
+      return
+    }
+
+    if (!deliveryInfo.lastName || deliveryInfo.lastName.trim().length < 2) {
+      toast.error('Please enter a valid last name')
+      return
+    }
+
+    if (!deliveryInfo.phone || deliveryInfo.phone.trim().length < 8) {
+      toast.error('Please enter a valid phone number')
+      return
+    }
+
+    if (!deliveryInfo.address || deliveryInfo.address.trim().length < 5) {
+      toast.error('Please enter a valid address')
+      return
+    }
+
+    if (!deliveryInfo.city || deliveryInfo.city.trim().length < 2) {
+      toast.error('Please enter a valid city')
+      return
+    }
+
     try {
-      const response = await axios.put(`${backendUrl}/api/user/delivery-info`, deliveryInfo, {
+      // Clean the data before sending
+      const cleanedDeliveryInfo = {
+        firstName: deliveryInfo.firstName.trim(),
+        lastName: deliveryInfo.lastName.trim(),
+        email: deliveryInfo.email.trim(),
+        phone: deliveryInfo.phone.trim(),
+        address: deliveryInfo.address.trim(),
+        city: deliveryInfo.city.trim(),
+        state: deliveryInfo.state.trim(),
+        zipcode: deliveryInfo.zipcode.trim(),
+        country: deliveryInfo.country
+      }
+
+      const response = await axios.put(`${backendUrl}/api/user/delivery-info`, cleanedDeliveryInfo, {
         headers: { token }
       })
 
       if (response.data.success) {
         toast.success('Delivery information saved successfully')
+        // Update state with cleaned data
+        setDeliveryInfo(cleanedDeliveryInfo)
       } else {
         toast.error(response.data.message)
       }
@@ -117,13 +189,29 @@ const Profile = () => {
 
   // Change password
   const changePassword = async () => {
+    // Validation
+    if (!passwordData.currentPassword) {
+      toast.error('Please enter your current password')
+      return
+    }
+
+    if (!passwordData.newPassword) {
+      toast.error('Please enter a new password')
+      return
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters long')
+      return
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match')
       return
     }
 
-    if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long')
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      toast.error('New password must be different from current password')
       return
     }
 
@@ -138,6 +226,7 @@ const Profile = () => {
       if (response.data.success) {
         toast.success('Password changed successfully')
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        setShowPassword(false)
       } else {
         toast.error(response.data.message)
       }
@@ -145,6 +234,40 @@ const Profile = () => {
       console.error('Error changing password:', error)
       toast.error('Failed to change password')
     }
+  }
+
+  // Join affiliate program
+  const joinAffiliateProgram = async () => {
+    try {
+      const response = await axios.post(`${backendUrl}/api/user/join-affiliate`, {}, {
+        headers: { token }
+      })
+
+      if (response.data.success) {
+        toast.success('Successfully joined the affiliate program!')
+        setAffiliateData({
+          isAffiliate: true,
+          affiliateCode: response.data.affiliateCode,
+          referralCount: 0,
+          totalEarnings: 0
+        })
+      } else {
+        toast.error(response.data.message)
+      }
+    } catch (error) {
+      console.error('Error joining affiliate program:', error)
+      toast.error('Failed to join affiliate program')
+    }
+  }
+
+  // Copy affiliate link
+  const copyAffiliateLink = () => {
+    const affiliateLink = `${window.location.origin}?ref=${affiliateData.affiliateCode}`
+    navigator.clipboard.writeText(affiliateLink).then(() => {
+      toast.success('Affiliate link copied to clipboard!')
+    }).catch(() => {
+      toast.error('Failed to copy link')
+    })
   }
 
   // Logout function
@@ -172,11 +295,9 @@ const Profile = () => {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
+    return `${new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 0
-    }).format(amount)
+    }).format(amount)} FCFA`
   }
 
   const formatDate = (dateString) => {
@@ -361,6 +482,76 @@ const Profile = () => {
                       <Save className="w-4 h-4" />
                       <span>Save Changes</span>
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Affiliate Program Section */}
+              <div className="sm:col-span-2 lg:col-span-4 bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-2 sm:space-y-0">
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900">Affiliate Program</h3>
+                  {affiliateData.isAffiliate && (
+                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 self-start sm:self-auto">
+                      Active Member
+                    </span>
+                  )}
+                </div>
+
+                {!affiliateData.isAffiliate ? (
+                  <div className="text-center py-6 sm:py-8">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                      <Users className="w-6 h-6 sm:w-8 sm:h-8 text-brand" />
+                    </div>
+                    <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Join Our Affiliate Program</h4>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 max-w-md mx-auto">
+                      Earn money by referring friends and family. Get your unique referral link and start earning today!
+                    </p>
+                    <button
+                      onClick={joinAffiliateProgram}
+                      className="bg-brand text-white px-6 py-3 rounded-md hover:bg-brand-dark text-sm sm:text-base font-medium transition-colors"
+                    >
+                      Join Affiliate Program
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Affiliate Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+                        <p className="text-lg sm:text-2xl font-bold text-blue-600">{affiliateData.referralCount}</p>
+                        <p className="text-xs sm:text-sm text-blue-600 font-medium">Referrals</p>
+                      </div>
+                      <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+                        <p className="text-lg sm:text-2xl font-bold text-green-600">{formatCurrency(affiliateData.totalEarnings)}</p>
+                        <p className="text-xs sm:text-sm text-green-600 font-medium">Total Earnings</p>
+                      </div>
+                      <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
+                        <p className="text-lg sm:text-2xl font-bold text-purple-600">{affiliateData.affiliateCode}</p>
+                        <p className="text-xs sm:text-sm text-purple-600 font-medium">Your Code</p>
+                      </div>
+                    </div>
+
+                    {/* Affiliate Link */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Your Affiliate Link</label>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={`${window.location.origin}?ref=${affiliateData.affiliateCode}`}
+                          readOnly
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm sm:text-base"
+                        />
+                        <button
+                          onClick={copyAffiliateLink}
+                          className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark text-sm sm:text-base font-medium whitespace-nowrap"
+                        >
+                          Copy Link
+                        </button>
+                      </div>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-2">
+                        Share this link with friends and earn money when they sign up and make purchases!
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
