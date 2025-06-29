@@ -238,26 +238,7 @@ const Profile = () => {
 
   // Join affiliate program
   const joinAffiliateProgram = async () => {
-    try {
-      const response = await axios.post(`${backendUrl}/api/user/join-affiliate`, {}, {
-        headers: { token }
-      })
-
-      if (response.data.success) {
-        toast.success('Successfully joined the affiliate program!')
-        setAffiliateData({
-          isAffiliate: true,
-          affiliateCode: response.data.affiliateCode,
-          referralCount: 0,
-          totalEarnings: 0
-        })
-      } else {
-        toast.error(response.data.message)
-      }
-    } catch (error) {
-      console.error('Error joining affiliate program:', error)
-      toast.error('Failed to join affiliate program')
-    }
+   navigate('/affiliate')
   }
 
   // Copy affiliate link
