@@ -14,7 +14,7 @@ import ReviewSection from '@/components/ReviewSection'
 import PhotoUpload from '@/components/UserPhotos/PhotoUpload';
 import ShareButton from '@/components/ShareButton';
 import MetaTags from '@/components/MetaTags';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Heart } from 'lucide-react';
 
 const Product = () => {
 
@@ -26,6 +26,7 @@ const Product = () => {
   const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState('')
   const [hasPreordered, setHasPreordered] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
   const [address, setAddress] = useState({
     firstName: '',
     lastName: '',
@@ -42,6 +43,49 @@ const Product = () => {
 
   const foundProduct = products.find((item) => item._id == productId);
 
+  // Check if product is in favorites
+  const checkFavoriteStatus = async () => {
+    if (!token || !productId) return;
+
+    try {
+      const response = await axios.get(`${backendUrl}/api/user/favorites`, {
+        headers: { token }
+      });
+
+      if (response.data.success) {
+        const favoriteIds = response.data.favorites.map(fav => fav._id);
+        setIsFavorite(favoriteIds.includes(productId));
+      }
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  // Toggle favorite status
+  const toggleFavorite = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${backendUrl}/api/user/favorites/toggle`,
+        { productId },
+        { headers: { token } }
+      );
+
+      if (response.data.success) {
+        setIsFavorite(!isFavorite);
+        toast.success(response.data.message);
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast.error('Failed to update favorites');
+    }
+  };
+
   useEffect(() => {
     setProductData(foundProduct);
     if (foundProduct) {
@@ -54,6 +98,11 @@ const Product = () => {
       setSelectedSize(''); // Reset size when product changes
     }
   }, [foundProduct]);
+
+  // Check favorite status when component mounts or token/productId changes
+  useEffect(() => {
+    checkFavoriteStatus();
+  }, [token, productId]);
 
   // Update active image when color changes
   useEffect(() => {
@@ -511,17 +560,36 @@ const Product = () => {
                   </button>
                 )
               ) : (
-                <button
-                  onClick={handleAddToCart}
-                  disabled={!selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)}
-                  className={`w-full sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
-                    !selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-brand-dark active:bg-brand-dark'
-                  }`}
-                >
-                  {!selectedColor ? (hasRealSizes ? 'Select Color & Size' : 'Select Color') : (hasRealSizes && !selectedSize) ? 'Select Size' : 'Add to Cart'}
-                </button>
+                <div className="flex gap-3 items-center">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)}
+                    className={`flex-1 sm:flex-none sm:w-auto bg-brand text-white px-6 sm:px-8 py-3 text-sm rounded-full transition-all ${
+                      !selectedColor || availableQuantity === 0 || (hasRealSizes && !selectedSize)
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-brand-dark active:bg-brand-dark'
+                    }`}
+                  >
+                    {!selectedColor ? (hasRealSizes ? 'Select Color & Size' : 'Select Color') : (hasRealSizes && !selectedSize) ? 'Select Size' : 'Add to Cart'}
+                  </button>
+
+                  {/* Heart/Favorite Button */}
+                  <button
+                    onClick={toggleFavorite}
+                    className={`p-3 rounded-full border-2 transition-all ${
+                      isFavorite
+                        ? 'bg-red-50 border-red-500 text-red-500 hover:bg-red-100'
+                        : 'bg-white border-gray-300 text-gray-400 hover:border-red-300 hover:text-red-400'
+                    }`}
+                    title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-all ${
+                        isFavorite ? 'fill-current' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
               )}
             </div>
 

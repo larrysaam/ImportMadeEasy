@@ -1,5 +1,6 @@
 import userModel from '../models/userModel.js'
 import referralModel from '../models/referralModel.js'
+import productModel from '../models/productModel.js'
 import validator from 'validator'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
@@ -157,4 +158,91 @@ const adminLogin = async (req,res) => {
     }
 }
 
-export { loginUser, registerUser, adminLogin }
+// Get user favorites
+const getFavorites = async (req, res) => {
+    try {
+        const { userId } = req.body;
+
+        const user = await userModel.findById(userId).populate({
+            path: 'favorites',
+            model: 'Product'
+        });
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            favorites: user.favorites
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Toggle favorite product
+const toggleFavorite = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const { productId } = req.body;
+
+        const user = await userModel.findById(userId);
+
+        if (!user) {
+            return res.json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        // Check if product exists
+        const product = await productModel.findById(productId);
+        if (!product) {
+            return res.json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        // Check if product is already in favorites
+        const favoriteIndex = user.favorites.indexOf(productId);
+
+        if (favoriteIndex > -1) {
+            // Remove from favorites
+            user.favorites.splice(favoriteIndex, 1);
+            await user.save();
+
+            res.json({
+                success: true,
+                message: "Removed from favorites"
+            });
+        } else {
+            // Add to favorites
+            user.favorites.push(productId);
+            await user.save();
+
+            res.json({
+                success: true,
+                message: "Added to favorites"
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export { loginUser, registerUser, adminLogin, getFavorites, toggleFavorite }

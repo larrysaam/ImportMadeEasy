@@ -1,5 +1,6 @@
 import userModel from '../models/userModel.js'
 import orderModel from '../models/orderModel.js'
+import productModel from '../models/productModel.js'
 import bcrypt from 'bcrypt'
 
 // Get user profile with stats and recent orders
@@ -7,8 +8,11 @@ const getUserProfile = async (req, res) => {
   try {
     const userId = req.body.userId
 
-    // Get user basic info
-    const user = await userModel.findById(userId).select('-password')
+    // Get user basic info with favorites populated
+    const user = await userModel.findById(userId).select('-password').populate({
+      path: 'favorites',
+      model: 'Product'
+    })
     if (!user) {
       return res.json({ success: false, message: "User not found" })
     }
@@ -64,7 +68,8 @@ const getUserProfile = async (req, res) => {
       user: userInfo,
       stats,
       recentOrders,
-      deliveryInfo
+      deliveryInfo,
+      favorites: user.favorites || []
     })
 
   } catch (error) {

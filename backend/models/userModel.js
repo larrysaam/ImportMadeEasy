@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default: {}
     },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product'
+    }],
     deliveryInfo: {
         firstName: { type: String, default: '' },
         lastName: { type: String, default: '' },
@@ -26,6 +30,6 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 })
 
-const userModel = mongoose.models.user || mongoose.model('user', userSchema)
+const userModel = mongoose.models.User || mongoose.model('User', userSchema)
 
 export default userModel

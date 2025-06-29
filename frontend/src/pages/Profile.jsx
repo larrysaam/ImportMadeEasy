@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react'
 import { ShopContext } from '@/context/ShopContext'
 import { toast } from 'sonner'
 import axios from 'axios'
-import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff, LogOut, Users } from 'lucide-react'
+import { User, Package, MapPin, CreditCard, Edit, Save, X, Eye, EyeOff, LogOut, Users, Heart } from 'lucide-react'
 import { assets } from '@/assets/assets'
 
 const Profile = () => {
@@ -30,6 +30,9 @@ const Profile = () => {
 
   // Recent orders
   const [recentOrders, setRecentOrders] = useState([])
+
+  // Favorites
+  const [favorites, setFavorites] = useState([])
 
   // Delivery info
   const [deliveryInfo, setDeliveryInfo] = useState({
@@ -68,7 +71,7 @@ const Profile = () => {
       })
 
       if (response.data.success) {
-        const { user, stats, recentOrders, deliveryInfo, affiliateData } = response.data
+        const { user, stats, recentOrders, deliveryInfo, affiliateData, favorites } = response.data
         setUserInfo(user)
         setStats(stats)
         setRecentOrders(recentOrders)
@@ -77,6 +80,9 @@ const Profile = () => {
         }
         if (affiliateData) {
           setAffiliateData(affiliateData)
+        }
+        if (favorites) {
+          setFavorites(favorites)
         }
       } else {
         toast.error(response.data.message)
@@ -251,6 +257,27 @@ const Profile = () => {
     })
   }
 
+  // Remove from favorites
+  const removeFavorite = async (productId) => {
+    try {
+      const response = await axios.post(`${backendUrl}/api/user/favorites/toggle`,
+        { productId },
+        { headers: { token } }
+      );
+
+      if (response.data.success) {
+        // Remove from local state
+        setFavorites(favorites.filter(fav => fav._id !== productId));
+        toast.success('Removed from favorites');
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error removing favorite:', error);
+      toast.error('Failed to remove from favorites');
+    }
+  }
+
   // Logout function
   const handleLogout = () => {
     setToken('')
@@ -324,6 +351,7 @@ const Profile = () => {
               {[
                 { id: 'overview', label: 'Overview', icon: User },
                 { id: 'orders', label: 'Orders', icon: Package },
+                { id: 'favorites', label: 'Favorites', icon: Heart },
                 { id: 'delivery', label: 'Delivery', icon: MapPin },
                 { id: 'security', label: 'Security', icon: CreditCard }
               ].map((tab) => {
@@ -587,6 +615,71 @@ const Profile = () => {
                     className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark text-sm sm:text-base"
                   >
                     Start Shopping
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Favorites Tab */}
+          {activeTab === 'favorites' && (
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4 sm:mb-6">My Favorite Products</h3>
+              {favorites.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                  {favorites.map((product) => (
+                    <div key={product._id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                      <div className="aspect-square mb-3 overflow-hidden rounded-md bg-gray-100">
+                        <img
+                          src={product.image?.[0] || '/placeholder-image.jpg'}
+                          alt={product.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                          onClick={() => navigate(`/product/${product._id}`)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <h4
+                          className="font-medium text-gray-900 text-sm sm:text-base line-clamp-2 cursor-pointer hover:text-brand"
+                          onClick={() => navigate(`/product/${product._id}`)}
+                        >
+                          {product.name}
+                        </h4>
+                        <p className="text-brand font-semibold text-sm sm:text-base">
+                          {new Intl.NumberFormat('fr-FR', {
+                            minimumFractionDigits: 0
+                          }).format(product.price)} FCFA
+                        </p>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => navigate(`/product/${product._id}`)}
+                            className="flex-1 bg-brand text-white px-3 py-2 rounded-md hover:bg-brand-dark text-xs sm:text-sm transition-colors"
+                          >
+                            View Product
+                          </button>
+                          <button
+                            onClick={() => removeFavorite(product._id)}
+                            className="p-2 border border-red-300 text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                            title="Remove from favorites"
+                          >
+                            <Heart className="w-4 h-4 fill-current" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 sm:py-12">
+                  <Heart className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg sm:text-xl font-medium text-gray-900 mb-2">No favorites yet</h4>
+                  <p className="text-gray-600 text-sm sm:text-base mb-6 max-w-md mx-auto">
+                    Start adding products to your favorites by clicking the heart icon on product pages.
+                  </p>
+                  <button
+                    onClick={() => navigate('/collection')}
+                    className="bg-brand text-white px-6 py-3 rounded-md hover:bg-brand-dark text-sm sm:text-base font-medium transition-colors"
+                  >
+                    Browse Products
                   </button>
                 </div>
               )}
