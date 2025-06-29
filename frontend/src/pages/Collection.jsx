@@ -30,7 +30,14 @@ const Collection = () => {
   const [bestsellerOnly, setBestsellerOnly] = useState(false) // Bestseller filter
   const [availableSubcategories, setAvailableSubcategories] = useState([])
   const [preorderOnly, setPreorderOnly] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState('') // Country filter
   const isPreorder = searchParams.get('preorder') === 'true'
+
+
+  const flagImages = {
+    Nigeria: "https://flagcdn.com/w320/ng.png",
+    China: "https://flagcdn.com/w320/cn.png"
+  }
 
   // Toggle category filter
   const toggleCategory = (value) => {
@@ -110,6 +117,13 @@ const Collection = () => {
       filtered = filtered.filter(item => item.bestseller)
     }
 
+    // Country filter
+    if (selectedCountry) {
+      filtered = filtered.filter(item =>
+        item.countryOfOrigin && item.countryOfOrigin.toLowerCase() === selectedCountry.toLowerCase()
+      )
+    }
+
     setFilterProducts(filtered)
     // No pagination needed - show all filtered products
   }
@@ -136,7 +150,7 @@ const Collection = () => {
   // Run filter logic when dependencies change
   useEffect(() => {
     applyFilter()
-  }, [selectedCategory, selectedSubCategory, search, showSearch, products, bestsellerOnly, preorderOnly])
+  }, [selectedCategory, selectedSubCategory, search, showSearch, products, bestsellerOnly, preorderOnly, selectedCountry])
 
   useEffect(() => {
     sortProduct()
@@ -180,25 +194,78 @@ const Collection = () => {
     <div className='flex flex-col px-3 sm:px-4 md:px-8 md:flex-row gap-1 sm:gap-10 pt-6 sm:pt-10 border-t animate-fade animate-duration-500'>
       {/* Mobile Filter Header */}
       <div className='min-w-60'>
-        <div className="flex justify-between items-center">
-          <p onClick={() => setShowFilter(!showFilter)} className='my-2 text-lg sm:text-xl flex items-center cursor-pointer gap-2 font-medium'>
+        {/* Mobile Header - Filters, Sort, and Country Flags in one row */}
+        <div className="flex items-center justify-between gap-3 md:hidden">
+          {/* FILTERS Dropdown */}
+          <p onClick={() => setShowFilter(!showFilter)} className='flex items-center cursor-pointer gap-2 font-medium text-sm'>
             FILTERS
-            <img 
-              src={assets.arrow} 
-              alt='dropdown-icon' 
-              className={`fill-gray-500 transition-all duration-200 h-3 rotate-270 md:hidden ${showFilter ? 'rotate-180' : ''}`} 
+            <img
+              src={assets.arrow}
+              alt='dropdown-icon'
+              className={`fill-gray-500 transition-all duration-200 h-3 rotate-270 ${showFilter ? 'rotate-180' : ''}`}
             />
           </p>
-          {/* Add mobile preorder toggle */}
-          {/* <button 
-            onClick={() => handlePreorderChange(!preorderOnly)}
-            className={`md:hidden px-3 py-1 text-sm rounded-full transition-colors
-              ${preorderOnly 
-                ? 'bg-black text-white' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-          >
-            {preorderOnly ? 'Show All' : 'Pre-orders'}
-          </button> */}
+
+          {/* Sort Dropdown - Mobile */}
+          <div className="flex items-center">
+            <Select defaultValue='relevant' onValueChange={setSortType}>
+              <SelectTrigger className="w-[100px] h-8 text-xs border border-gray-300">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevant" className="text-xs">Relevant</SelectItem>
+                <SelectItem value="low-high" className="text-xs">Low-High</SelectItem>
+                <SelectItem value="high-low" className="text-xs">High-Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Country Filter Flags */}
+          <div className="flex items-center gap-1">
+            {/* All Countries Button */}
+            <button
+              onClick={() => setSelectedCountry('')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs transition-all ${
+                selectedCountry === ''
+                  ? 'bg-brand text-white shadow-md'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+              title="All Countries"
+            >
+              🌍
+            </button>
+
+            {/* Nigeria Flag Button */}
+            <button
+              onClick={() => setSelectedCountry('Nigeria')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
+                selectedCountry === 'Nigeria'
+                  ? 'bg-brand/20 ring-2 ring-brand shadow-md'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+              title="Nigeria"
+            >
+              <img src={flagImages.Nigeria} alt="Nigeria Flag"/>
+            </button>
+
+            {/* China Flag Button */}
+            <button
+              onClick={() => setSelectedCountry('China')}
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
+                selectedCountry === 'China'
+                  ? 'bg-brand/20 ring-2 ring-brand shadow-md'
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+              title="China"
+            >
+              <img src={flagImages.China} alt="Nigeria Flag"/>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Header - Keep original structure for desktop */}
+        <div className="hidden md:block">
+          <p className='my-2 text-xl font-medium'>FILTERS</p>
         </div>
 
         {/* Existing Filter Sections */}
@@ -216,8 +283,59 @@ const Collection = () => {
             </div>
           </div>
 
-          {/* Subcategory Filter */}
+          {/* Country of Origin Filter */}
           <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} md:block`}>
+            <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>COUNTRY OF ORIGIN</p>
+            <div className='flex flex-col gap-3 text-sm font-light text-gray-700'>
+              {/* All Countries Option */}
+              <div
+                className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
+                  selectedCountry === '' ? 'bg-brand/10 border border-brand/20' : ''
+                }`}
+                onClick={() => setSelectedCountry('')}
+              >
+                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs">
+                  🌍
+                </div>
+                <span className={`${selectedCountry === '' ? 'font-medium text-brand' : ''}`}>
+                  All Countries
+                </span>
+              </div>
+
+              {/* Nigeria Option */}
+              <div
+                className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
+                  selectedCountry === 'Nigeria' ? 'bg-brand/10 border border-brand/20' : ''
+                }`}
+                onClick={() => setSelectedCountry('Nigeria')}
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-lg">
+                  <img src={flagImages.Nigeria} alt="Nigeria Flag"/>
+                </div>
+                <span className={`${selectedCountry === 'Nigeria' ? 'font-medium text-brand' : ''}`}>
+                  Nigeria
+                </span>
+              </div>
+
+              {/* China Option */}
+              <div
+                className={`flex items-center space-x-3 p-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 ${
+                  selectedCountry === 'China' ? 'bg-brand/10 border border-brand/20' : ''
+                }`}
+                onClick={() => setSelectedCountry('China')}
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-lg">
+                  <img src={flagImages.China} alt="Nigeria Flag"/>
+                </div>
+                <span className={`${selectedCountry === 'China' ? 'font-medium text-brand' : ''}`}>
+                  China
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Subcategory Filter */}
+          {/* <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} md:block`}>
             <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>TYPE</p>
             <div className='flex flex-col gap-3 text-sm font-light text-gray-700'>
               {availableSubcategories.map(subCat => (
@@ -241,7 +359,7 @@ const Collection = () => {
                 Select a category to see available types
               </p>
             )}
-          </div>
+          </div> */}
 
           {/* Bestseller Filter */}
           <div className={`border border-gray-300 pl-5 py-3 my-5 ${showFilter ? '' : 'hidden'} md:block`}>
@@ -253,7 +371,7 @@ const Collection = () => {
           </div>
 
           {/* Preorder Filter */}
-          <div className={`border border-gray-300 pl-5 py-3 mt-6 hidden md:block`}>
+          {/* <div className={`border border-gray-300 pl-5 py-3 mt-6 hidden md:block`}>
             <p className='mb-3 text-xs sm:text-sm font-medium tracking-wide'>PRODUCT TYPE</p>
             <div className="items-center flex space-x-2">
               <Checkbox 
@@ -265,29 +383,29 @@ const Collection = () => {
                 Pre-order Only
               </label>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* Products Section */}
       <div className='flex-1'>
         <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4'>
-          <Title 
-            text1={isPreorder ? 'PRE' : 'ALL'} 
-            text2={isPreorder ? 'ORDERS' : 'COLLECTIONS'} 
+          <Title
+            text1={isPreorder ? 'PRE' : (selectedCountry ? selectedCountry.toUpperCase() : 'ALL')}
+            text2={isPreorder ? 'ORDERS' : 'COLLECTIONS'}
           />
           
-          {/* Product Sort Dropdown */}
-          <div className='flex items-center gap-2'>
-            <span className='text-xs sm:text-sm text-gray-600 hidden sm:block'>Sort by:</span>
+          {/* Product Sort Dropdown - Desktop Only */}
+          <div className='hidden md:flex items-center gap-2'>
+            <span className='text-sm text-gray-600'>Sort by:</span>
             <Select defaultValue='relevant' onValueChange={setSortType} className='border-2 border-gray-300 text-sm px-2'>
-              <SelectTrigger className="w-[140px] sm:w-[160px] lg:w-[180px] text-xs sm:text-sm">
+              <SelectTrigger className="w-[160px] lg:w-[180px] text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="relevant" className="text-xs sm:text-sm">Relevant</SelectItem>
-                <SelectItem value="low-high" className="text-xs sm:text-sm">Low to High</SelectItem>
-                <SelectItem value="high-low" className="text-xs sm:text-sm">High to Low</SelectItem>
+                <SelectItem value="relevant" className="text-sm">Relevant</SelectItem>
+                <SelectItem value="low-high" className="text-sm">Low to High</SelectItem>
+                <SelectItem value="high-low" className="text-sm">High to Low</SelectItem>
               </SelectContent>
             </Select>
           </div>

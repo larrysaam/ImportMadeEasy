@@ -35,6 +35,16 @@ const Navbar = () => {
   // Check if navbar should be visible on mobile (only homepage and collection page)
   const shouldShowOnMobile = location.pathname === '/' || location.pathname.includes('/collection')
 
+  // Enable search functionality when on collection page
+  useEffect(() => {
+    if (location.pathname.includes('collection')) {
+      setShowSearch(true)
+    } else {
+      setShowSearch(false)
+      setSearch('')
+    }
+  }, [location.pathname, setShowSearch, setSearch])
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
@@ -273,14 +283,23 @@ const Navbar = () => {
               px-3 py-2 bg-gray-50 rounded-full relative'>
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  // Enable search functionality when user types on collection page
+                  if (location.pathname.includes('collection')) {
+                    setShowSearch(true)
+                  }
+                }}
                 type='text'
                 placeholder='Search by name or keywords...'
                 className='flex-1 outline-none bg-inherit text-sm placeholder-gray-500'
               />
               {search && (
                 <img
-                  onClick={() => setSearch('')}
+                  onClick={() => {
+                    setSearch('')
+                    setShowSearch(false)
+                  }}
                   src={assets.cross}
                   alt='clear-search'
                   className='w-3 cursor-pointer ml-2'
