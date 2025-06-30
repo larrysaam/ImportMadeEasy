@@ -38,15 +38,30 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 //Placing orders using COD method
 const placeOrder = async (req, res) => {
   try {
-    const { userId, items, amount, address } = req.body;
+    const { userId, items, amount, address, shipping } = req.body;
 
     console.log('Placing COD order with items:', items);
-    
+    console.log('Shipping info:', shipping);
+
     // Validate and process items to ensure they have proper color/size/quantity info
     const processedItems = await validateAndProcessOrderItems(items);
-    
+
     // Update product quantities first
     await updateProductQuantities(processedItems);
+
+    // Calculate shipping cost and weight
+    const totalWeight = processedItems.reduce((total, item) => {
+      const weight = item.weight || 1; // Default 1kg if no weight specified
+      return total + (weight * item.quantity);
+    }, 0);
+
+    const shippingRates = {
+      air: 8500,    // 8500 FCFA per kg
+      sea: 1100,    // 1100 FCFA per kg
+      land: 1000    // 1000 FCFA per kg
+    };
+
+    const shippingCost = totalWeight * (shippingRates[shipping?.method] || shippingRates.sea);
 
     const orderData = {
       userId,
@@ -55,7 +70,13 @@ const placeOrder = async (req, res) => {
       amount,
       paymentMethod: "COD",
       payment: false,
-      date: Date.now()
+      date: Date.now(),
+      shipping: {
+        method: shipping?.method || 'sea',
+        cost: shippingCost,
+        weight: totalWeight,
+        country: shipping?.country || 'china'
+      }
     };
 
     console.log('Order data:', orderData);

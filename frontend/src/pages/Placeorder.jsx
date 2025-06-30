@@ -85,8 +85,27 @@ const Placeorder = () => {
   });
 
   const prepareOrderData = (formData) => {
+    // Load checkout data from localStorage
+    const checkoutData = localStorage.getItem('checkoutData')
+    let shippingData = {
+      method: 'sea',
+      country: 'china'
+    }
+
+    if (checkoutData) {
+      try {
+        const parsedData = JSON.parse(checkoutData)
+        shippingData = {
+          method: parsedData.shippingMode || 'sea',
+          country: parsedData.selectedCountry || 'china'
+        }
+      } catch (error) {
+        console.error('Error parsing checkout data:', error)
+      }
+    }
+
     // Collect items from cart
-    const orderItems = Object.entries(cartItems).flatMap(([productId, sizes]) => 
+    const orderItems = Object.entries(cartItems).flatMap(([productId, sizes]) =>
       Object.entries(sizes).map(([size, quantity]) => {
         if (quantity > 0) {
           const product = products.find(p => p._id === productId)
@@ -95,6 +114,7 @@ const Placeorder = () => {
               productId,
               name: product.name,
               price: product.price,
+              weight: product.weight || 1, // Add weight for shipping calculation
               // Add a check to handle missing images
               image: product.images && product.images.length > 0 ? product.images[0] : null,
               size,
@@ -110,7 +130,8 @@ const Placeorder = () => {
       address: formData,
       items: orderItems,
       amount: getCartAmount(), // Delivery fee excluded - paid on delivery
-      paymentMethod: 'mobile'
+      paymentMethod: 'mobile',
+      shipping: shippingData
     }
   }
 

@@ -9,6 +9,12 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: {type: String, required: true},
     payment: {type: Boolean, required: true, default: false},
     date: {type: Number, required: true},
+    shipping: {
+        method: {type: String, required: true, enum: ['air', 'sea', 'land'], default: 'sea'},
+        cost: {type: Number, required: true, default: 0},
+        weight: {type: Number, required: true, default: 0},
+        country: {type: String, required: true, enum: ['nigeria', 'china'], default: 'china'}
+    }
 })
 
 const orderModel = mongoose.models.order || mongoose.model('order', orderSchema)

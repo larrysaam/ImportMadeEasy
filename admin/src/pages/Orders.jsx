@@ -16,6 +16,13 @@ const Orders = ({token}) => {
   const [products, setProducts] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [countryFilter, setCountryFilter] = useState('All')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState('date')
+  const [sortOrder, setSortOrder] = useState('desc')
+  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedUser, setSelectedUser] = useState('All')
+  const [availableUsers, setAvailableUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const ordersPerPage = 5
@@ -105,12 +112,123 @@ const Orders = ({token}) => {
     }
   };
 
-  // Filter orders by status
-  const filteredOrders = statusFilter === 'All' 
-    ? orders 
-    : orders.filter(order => order.status === statusFilter)
+  // Helper function to get user name from order
+  const getUserName = (order) => {
+    return order.address?.firstName && order.address?.lastName
+      ? `${order.address.firstName} ${order.address.lastName}`
+      : 'Unknown User'
+  }
 
-  // Get current orders after filtering
+  // Helper function to get product names from order
+  const getProductNames = (order) => {
+    return order.items?.map(item => item.name).join(', ') || 'No products'
+  }
+
+  // Get users who made orders on selected date
+  const getUsersForSelectedDate = () => {
+    if (!selectedDate) return []
+
+    const selectedDateObj = new Date(selectedDate)
+    const ordersOnDate = orders.filter(order => {
+      const orderDate = new Date(order.date)
+      return orderDate.toDateString() === selectedDateObj.toDateString()
+    })
+
+    const users = ordersOnDate.map(order => ({
+      name: getUserName(order),
+      userId: order.userId
+    }))
+
+    // Remove duplicates
+    const uniqueUsers = users.filter((user, index, self) =>
+      index === self.findIndex(u => u.userId === user.userId)
+    )
+
+    return uniqueUsers.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  // Filter and sort orders
+  const getFilteredAndSortedOrders = () => {
+    let filtered = orders
+
+    // Filter by status
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter(order => order.status === statusFilter)
+    }
+
+    // Filter by country
+    if (countryFilter !== 'All') {
+      filtered = filtered.filter(order =>
+        order.shipping?.country?.toLowerCase() === countryFilter.toLowerCase()
+      )
+    }
+
+    // Filter by selected date (when sorting by date)
+    if (selectedDate && sortBy === 'date') {
+      const selectedDateObj = new Date(selectedDate)
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.date)
+        return orderDate.toDateString() === selectedDateObj.toDateString()
+      })
+    }
+
+    // Filter by selected user (when sorting by user and user is selected)
+    if (selectedUser !== 'All' && sortBy === 'user') {
+      filtered = filtered.filter(order => {
+        const userName = getUserName(order)
+        return userName === selectedUser
+      })
+    }
+
+    // Filter by search term (user name, product name) - only when not using date/user filters
+    if (searchTerm.trim() && sortBy !== 'date' && sortBy !== 'user') {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(order => {
+        const userName = getUserName(order).toLowerCase()
+        const productNames = getProductNames(order).toLowerCase()
+        return userName.includes(searchLower) || productNames.includes(searchLower)
+      })
+    }
+
+    // Sort orders
+    filtered.sort((a, b) => {
+      let aValue, bValue
+
+      switch (sortBy) {
+        case 'date':
+          aValue = new Date(a.date)
+          bValue = new Date(b.date)
+          break
+        case 'user':
+          aValue = getUserName(a).toLowerCase()
+          bValue = getUserName(b).toLowerCase()
+          break
+        case 'country':
+          aValue = a.shipping?.country || 'unknown'
+          bValue = b.shipping?.country || 'unknown'
+          break
+        case 'amount':
+          aValue = a.amount
+          bValue = b.amount
+          break
+        default:
+          aValue = a.date
+          bValue = b.date
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1
+      } else {
+        return aValue < bValue ? 1 : -1
+      }
+    })
+
+    return filtered
+  }
+
+  const filteredOrders = getFilteredAndSortedOrders()
+
+  // Get current orders after filtering and sorting
   const indexOfLastOrder = currentPage * ordersPerPage
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
   const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder)
@@ -144,7 +262,42 @@ const Orders = ({token}) => {
   // Reset to first page when status filter changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [statusFilter])
+  }, [statusFilter, countryFilter, searchTerm, sortBy, sortOrder, selectedDate, selectedUser])
+
+  // Update available users when date changes or when sorting by user
+  useEffect(() => {
+    if (sortBy === 'user') {
+      if (selectedDate) {
+        // Get users for selected date
+        setAvailableUsers(getUsersForSelectedDate())
+      } else {
+        // Get all users who have made orders
+        const allUsers = orders.map(order => ({
+          name: getUserName(order),
+          userId: order.userId
+        }))
+
+        // Remove duplicates
+        const uniqueUsers = allUsers.filter((user, index, self) =>
+          index === self.findIndex(u => u.userId === user.userId)
+        )
+
+        setAvailableUsers(uniqueUsers.sort((a, b) => a.name.localeCompare(b.name)))
+      }
+    } else {
+      setAvailableUsers([])
+    }
+  }, [sortBy, selectedDate, orders])
+
+  // Reset user selection when date changes or sort changes
+  useEffect(() => {
+    if (sortBy !== 'user') {
+      setSelectedUser('All')
+      setSelectedDate('')
+    } else if (sortBy === 'user' && selectedDate) {
+      setSelectedUser('All')
+    }
+  }, [sortBy, selectedDate])
 
   // Get unique statuses from orders for filter options
   const getUniqueStatuses = () => {
@@ -195,34 +348,220 @@ const Orders = ({token}) => {
       <div className="mb-4 sm:mb-6">
         <h3 className="text-xl sm:text-2xl font-medium mb-4">Order Management</h3>
         
-        {/* Status Filter - Mobile optimized */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <span className="text-xs sm:text-sm font-medium text-gray-700">Filter by Status:</span>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Orders</SelectItem>
-                {getUniqueStatuses().map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Comprehensive Filters - Mobile optimized */}
+        <div className="space-y-4">
+          {/* Search Bar */}
+          <div className="w-full">
+            <input
+              type="text"
+              placeholder="Search by user name or product name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-          
-          {/* Order count display - Mobile optimized */}
-          <div className="text-xs sm:text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-md">
-            <span className="font-medium">
-              {currentOrders.length} of {filteredOrders.length} orders
-            </span>
-            {statusFilter !== 'All' && (
-              <span className="block sm:inline sm:ml-1 text-blue-600">
-                ({statusFilter})
+
+          {/* Filter Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Status Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  {getUniqueStatuses().map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Country Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Countries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Countries</SelectItem>
+                  <SelectItem value="nigeria">Nigeria</SelectItem>
+                  <SelectItem value="china">China</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort By */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="user">User Name</SelectItem>
+                  <SelectItem value="country">Country</SelectItem>
+                  <SelectItem value="amount">Amount</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Order */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Order</label>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sort order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Newest First</SelectItem>
+                  <SelectItem value="asc">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Date Picker - Show when sorting by date */}
+          {sortBy === 'date' && (
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">Select Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {selectedDate && (
+                <div className="mt-2 text-xs text-gray-600">
+                  Showing orders for {new Date(selectedDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* User Selection - Show when sorting by user */}
+          {sortBy === 'user' && (
+            <div className="mt-3 space-y-3">
+              {/* Date picker for user filtering */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Select Date (optional - to see users who ordered on specific date)
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {selectedDate && (
+                  <button
+                    onClick={() => setSelectedDate('')}
+                    className="ml-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Clear date
+                  </button>
+                )}
+              </div>
+
+              {/* User selection */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Select User {selectedDate ? `(who ordered on ${new Date(selectedDate).toLocaleDateString()})` : ''}
+                </label>
+                <Select value={selectedUser} onValueChange={setSelectedUser}>
+                  <SelectTrigger className="w-full sm:w-auto min-w-[200px]">
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Users</SelectItem>
+                    {availableUsers.map((user) => (
+                      <SelectItem key={user.userId} value={user.name}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {availableUsers.length === 0 && selectedDate && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    No users found for the selected date
+                  </div>
+                )}
+                {selectedUser !== 'All' && (
+                  <div className="mt-1 text-xs text-gray-600">
+                    Showing all orders by {selectedUser}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Results Summary */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <div className="text-xs sm:text-sm text-gray-600">
+              <span className="font-medium">
+                Showing {currentOrders.length} of {filteredOrders.length} orders
               </span>
+              {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All') && (
+                <span className="block sm:inline sm:ml-1 text-blue-600">
+                  (filtered from {orders.length} total)
+                </span>
+              )}
+              {/* Show active filters */}
+              <div className="mt-1 flex flex-wrap gap-1">
+                {statusFilter !== 'All' && (
+                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                    Status: {statusFilter}
+                  </span>
+                )}
+                {countryFilter !== 'All' && (
+                  <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded capitalize">
+                    Country: {countryFilter}
+                  </span>
+                )}
+                {selectedDate && (
+                  <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+                    Date: {new Date(selectedDate).toLocaleDateString()}
+                  </span>
+                )}
+                {selectedUser !== 'All' && (
+                  <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+                    User: {selectedUser}
+                  </span>
+                )}
+                {searchTerm.trim() && (
+                  <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
+                    Search: "{searchTerm}"
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All') && (
+              <button
+                onClick={() => {
+                  setStatusFilter('All')
+                  setCountryFilter('All')
+                  setSearchTerm('')
+                  setSelectedDate('')
+                  setSelectedUser('All')
+                  setCurrentPage(1)
+                }}
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Clear all filters
+              </button>
             )}
           </div>
         </div>
@@ -372,21 +711,74 @@ const Orders = ({token}) => {
                 <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="space-y-1">
                     <p><span className="text-gray-600">Items:</span> <span className="font-medium">{order.items.length}</span></p>
-                    <p><span className="text-gray-600">Payment:</span> 
+                    <p><span className="text-gray-600">Payment:</span>
                       <span className={`font-medium ml-1 ${order.payment ? 'text-green-600' : 'text-orange-600'}`}>
                         {order.payment ? 'Done' : 'Pending'}
+                      </span>
+                    </p>
+                    <p><span className="text-gray-600">Country:</span>
+                      <span className="font-medium ml-1 capitalize">
+                        {order.shipping?.country || 'Unknown'}
                       </span>
                     </p>
                   </div>
                   <div className="space-y-1">
                     <p><span className="text-gray-600">Method:</span> <span className="font-medium">{order.paymentMethod}</span></p>
                     <p><span className="text-gray-600">Date:</span> <span className="font-medium">{new Date(order.date).toLocaleDateString()}</span></p>
+                    <p><span className="text-gray-600">Shipping:</span>
+                      <span className="font-medium ml-1 capitalize">
+                        {order.shipping?.method || 'Sea'}
+                      </span>
+                    </p>
                   </div>
                 </div>
+
+                {/* Shipping Details */}
+                {order.shipping && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <h5 className="font-medium text-xs mb-2 text-gray-700">Shipping Details</h5>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="space-y-1">
+                        <p><span className="text-gray-600">Weight:</span> <span className="font-medium">{order.shipping.weight?.toFixed(1) || '0'} kg</span></p>
+                        <p><span className="text-gray-600">Method:</span>
+                          <span className="font-medium ml-1 capitalize">
+                            {order.shipping.method === 'air' ? 'Air (Express)' :
+                             order.shipping.method === 'sea' ? 'Sea (Normal)' :
+                             order.shipping.method === 'land' ? 'Land (Local)' :
+                             order.shipping.method}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p><span className="text-gray-600">Shipping Cost:</span>
+                          <span className="font-medium ml-1">{currency}{order.shipping.cost?.toLocaleString() || '0'}</span>
+                        </p>
+                        <p><span className="text-gray-600">Origin:</span>
+                          <span className="font-medium ml-1 capitalize">{order.shipping.country || 'Unknown'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
-                    Total: {currency}{order.amount}
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Product Total:</span>
+                    <span className="text-sm font-medium">{currency}{order.amount}</span>
+                  </div>
+                  {order.shipping?.cost && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm font-medium text-gray-700">Shipping Fee:</span>
+                      <span className="text-sm font-medium">{currency}{order.shipping.cost.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-300">
+                    <span className="text-sm sm:text-base font-bold text-gray-900">Grand Total:</span>
+                    <span className="text-sm sm:text-base font-bold text-gray-900">
+                      {currency}{(order.amount + (order.shipping?.cost || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-orange-600 mt-1">*Shipping fee paid on delivery</p>
                 </div>
               </div>
             </div>
