@@ -22,7 +22,9 @@ const Orders = ({token}) => {
   const [sortOrder, setSortOrder] = useState('desc')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedUser, setSelectedUser] = useState('All')
+  const [selectedProduct, setSelectedProduct] = useState('All')
   const [availableUsers, setAvailableUsers] = useState([])
+  const [availableProducts, setAvailableProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const ordersPerPage = 5
@@ -147,6 +149,30 @@ const Orders = ({token}) => {
     return uniqueUsers.sort((a, b) => a.name.localeCompare(b.name))
   }
 
+  // Get all unique products from orders
+  const getAvailableProducts = () => {
+    const productMap = new Map()
+
+    orders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (item.name && !productMap.has(item.name)) {
+            productMap.set(item.name, {
+              name: item.name,
+              productId: item.productId || item._id,
+              orderCount: 0
+            })
+          }
+          if (productMap.has(item.name)) {
+            productMap.get(item.name).orderCount++
+          }
+        })
+      }
+    })
+
+    return Array.from(productMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+  }
+
   // Filter and sort orders
   const getFilteredAndSortedOrders = () => {
     let filtered = orders
@@ -180,8 +206,15 @@ const Orders = ({token}) => {
       })
     }
 
-    // Filter by search term (user name, product name) - only when not using date/user filters
-    if (searchTerm.trim() && sortBy !== 'date' && sortBy !== 'user') {
+    // Filter by selected product (when sorting by product and product is selected)
+    if (selectedProduct !== 'All' && sortBy === 'product') {
+      filtered = filtered.filter(order => {
+        return order.items && order.items.some(item => item.name === selectedProduct)
+      })
+    }
+
+    // Filter by search term (user name, product name) - only when not using specific filters
+    if (searchTerm.trim() && sortBy !== 'date' && sortBy !== 'user' && sortBy !== 'product') {
       const searchLower = searchTerm.toLowerCase()
       filtered = filtered.filter(order => {
         const userName = getUserName(order).toLowerCase()
@@ -210,6 +243,10 @@ const Orders = ({token}) => {
         case 'amount':
           aValue = a.amount
           bValue = b.amount
+          break
+        case 'product':
+          aValue = getProductNames(a).toLowerCase()
+          bValue = getProductNames(b).toLowerCase()
           break
         default:
           aValue = a.date
@@ -262,7 +299,7 @@ const Orders = ({token}) => {
   // Reset to first page when status filter changes
   useEffect(() => {
     setCurrentPage(1)
-  }, [statusFilter, countryFilter, searchTerm, sortBy, sortOrder, selectedDate, selectedUser])
+  }, [statusFilter, countryFilter, searchTerm, sortBy, sortOrder, selectedDate, selectedUser, selectedProduct])
 
   // Update available users when date changes or when sorting by user
   useEffect(() => {
@@ -289,15 +326,34 @@ const Orders = ({token}) => {
     }
   }, [sortBy, selectedDate, orders])
 
-  // Reset user selection when date changes or sort changes
+  // Update available products when sorting by product
+  useEffect(() => {
+    if (sortBy === 'product') {
+      setAvailableProducts(getAvailableProducts())
+    } else {
+      setAvailableProducts([])
+    }
+  }, [sortBy, orders])
+
+  // Reset selections when sort changes
   useEffect(() => {
     if (sortBy !== 'user') {
       setSelectedUser('All')
-      setSelectedDate('')
+      if (sortBy !== 'date') {
+        setSelectedDate('')
+      }
     } else if (sortBy === 'user' && selectedDate) {
       setSelectedUser('All')
     }
-  }, [sortBy, selectedDate])
+
+    if (sortBy !== 'product') {
+      setSelectedProduct('All')
+    }
+
+    if (sortBy !== 'date') {
+      setSelectedDate('')
+    }
+  }, [sortBy])
 
   // Get unique statuses from orders for filter options
   const getUniqueStatuses = () => {
@@ -406,6 +462,7 @@ const Orders = ({token}) => {
                 <SelectContent>
                   <SelectItem value="date">Date</SelectItem>
                   <SelectItem value="user">User Name</SelectItem>
+                  <SelectItem value="product">Product Name</SelectItem>
                   <SelectItem value="country">Country</SelectItem>
                   <SelectItem value="amount">Amount</SelectItem>
                 </SelectContent>
@@ -506,13 +563,50 @@ const Orders = ({token}) => {
             </div>
           )}
 
+          {/* Product Selection - Show when sorting by product */}
+          {sortBy === 'product' && (
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Select Product
+              </label>
+              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                <SelectTrigger className="w-full sm:w-auto min-w-[250px]">
+                  <SelectValue placeholder="Select product" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Products</SelectItem>
+                  {availableProducts.map((product) => (
+                    <SelectItem key={product.name} value={product.name}>
+                      <div className="flex justify-between items-center w-full">
+                        <span className="truncate">{product.name}</span>
+                        <span className="ml-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {product.orderCount} orders
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {availableProducts.length === 0 && (
+                <div className="mt-1 text-xs text-gray-500">
+                  No products found in orders
+                </div>
+              )}
+              {selectedProduct !== 'All' && (
+                <div className="mt-1 text-xs text-gray-600">
+                  Showing all orders containing "{selectedProduct}"
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Results Summary */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <div className="text-xs sm:text-sm text-gray-600">
               <span className="font-medium">
                 Showing {currentOrders.length} of {filteredOrders.length} orders
               </span>
-              {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All') && (
+              {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All' || selectedProduct !== 'All') && (
                 <span className="block sm:inline sm:ml-1 text-blue-600">
                   (filtered from {orders.length} total)
                 </span>
@@ -539,6 +633,11 @@ const Orders = ({token}) => {
                     User: {selectedUser}
                   </span>
                 )}
+                {selectedProduct !== 'All' && (
+                  <span className="inline-block px-2 py-1 bg-pink-100 text-pink-800 text-xs rounded">
+                    Product: {selectedProduct.length > 20 ? selectedProduct.substring(0, 20) + '...' : selectedProduct}
+                  </span>
+                )}
                 {searchTerm.trim() && (
                   <span className="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded">
                     Search: "{searchTerm}"
@@ -548,7 +647,7 @@ const Orders = ({token}) => {
             </div>
 
             {/* Clear Filters Button */}
-            {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All') && (
+            {(statusFilter !== 'All' || countryFilter !== 'All' || searchTerm.trim() || selectedDate || selectedUser !== 'All' || selectedProduct !== 'All') && (
               <button
                 onClick={() => {
                   setStatusFilter('All')
@@ -556,6 +655,7 @@ const Orders = ({token}) => {
                   setSearchTerm('')
                   setSelectedDate('')
                   setSelectedUser('All')
+                  setSelectedProduct('All')
                   setCurrentPage(1)
                 }}
                 className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 underline"

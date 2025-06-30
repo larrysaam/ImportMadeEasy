@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom'
 import { assets } from '../assets/assets'
 
 
-const Navbar = ({setToken}) => {
+const Navbar = ({setToken, adminData}) => {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
@@ -53,8 +53,26 @@ const Navbar = ({setToken}) => {
       <div className='flex items-center py-2 px-[4%] justify-between'>
           <img className='sm:w-[max(5%,30px)] w-10 ' src={assets.logo} alt='' />
           <div className='text-lg sm:text-xl mx-2 sm:mx-6'>Our Shop's Admin Panel</div>
-          {/* This is the target div for the Google Translate widget. Ensure the ID is correct. */}
-          <div className='max-w-xs' id="google_translate_element"></div>
+
+          <div className='flex items-center gap-4'>
+            {/* Admin Info */}
+            {adminData && (
+              <div className='hidden sm:flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg'>
+                <div className='text-right'>
+                  <div className='text-sm font-medium text-gray-800'>{adminData.username}</div>
+                  <div className='text-xs text-gray-600 capitalize'>{adminData.role.replace('_', ' ')}</div>
+                </div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                  adminData.role === 'super_admin' ? 'bg-purple-600' : 'bg-blue-600'
+                }`}>
+                  {adminData.username.charAt(0).toUpperCase()}
+                </div>
+              </div>
+            )}
+
+            {/* This is the target div for the Google Translate widget. Ensure the ID is correct. */}
+            <div className='max-w-xs' id="google_translate_element"></div>
+          </div>
       </div>
 
       {/* Search Bar - Only visible on list page */}

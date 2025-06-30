@@ -10,7 +10,7 @@ import {
   createTestAffiliate
 } from '../controllers/affiliateController.js'
 import authUser from '../middleware/auth.js'
-import adminAuth from '../middleware/adminAuth.js'
+import adminAuth, { checkPermission } from '../middleware/adminAuth.js'
 
 const affiliateRouter = express.Router()
 
@@ -24,8 +24,8 @@ affiliateRouter.get('/dashboard', authUser, getAffiliateDashboard)
 affiliateRouter.get('/stats', authUser, getAffiliateStats)
 
 // Admin routes (require admin authentication)
-affiliateRouter.get('/admin/all', adminAuth, getAllAffiliates)
-affiliateRouter.put('/admin/:affiliateId/status', adminAuth, updateAffiliateStatus)
-affiliateRouter.post('/admin/create-test', adminAuth, createTestAffiliate)
+affiliateRouter.get('/admin/all', adminAuth, checkPermission('affiliates'), getAllAffiliates)
+affiliateRouter.put('/admin/:affiliateId/status', adminAuth, checkPermission('affiliates'), updateAffiliateStatus)
+affiliateRouter.post('/admin/create-test', adminAuth, checkPermission('affiliates'), createTestAffiliate)
 
 export default affiliateRouter

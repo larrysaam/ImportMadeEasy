@@ -17,6 +17,7 @@ import photoRouter from './routes/PhotoRoute.js'
 import affiliateRouter from './routes/affiliateRoute.js'
 import mesombRouter from './routes/mesombRoute.js'
 import metaRouter from './routes/metaRoute.js'
+import adminRouter from './routes/adminRoute.js'
 
 //App config
 
@@ -48,6 +49,7 @@ app.use('/api/photos', photoRouter)
 app.use('/api/affiliate', affiliateRouter)
 app.use('/api/mesomb', mesombRouter)
 app.use('/meta', metaRouter)
+app.use('/api/admin-auth', adminRouter)
 
 app.get('/', (req, res) => {
     res.send("API working")

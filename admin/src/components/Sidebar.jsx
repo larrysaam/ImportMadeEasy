@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom'
 import { BsGrid,  } from 'react-icons/bs'
 import {
   BsChatDots, // Example icon for messages
-  BsPeople // Icon for affiliates
+  BsPeople, // Icon for affiliates
+  BsShield // Icon for admin management
 } from 'react-icons/bs'
 import { HiMenuAlt3 } from 'react-icons/hi'
 import { IoMdClose } from 'react-icons/io'
@@ -12,7 +13,7 @@ import { IoSettings } from "react-icons/io5";
 import { MdLibraryAddCheck } from "react-icons/md";
 import { toast } from "sonner";
 
-const Sidebar = ({ setToken }) => {
+const Sidebar = ({ setToken, adminData, hasPermission }) => {
   const [isOpen, setIsOpen] = useState(false)
 
   const toggleSidebar = () => {
@@ -21,6 +22,7 @@ const Sidebar = ({ setToken }) => {
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('adminData')
     setToken('')
     toast.success('Successfully logged out')
   }
@@ -57,8 +59,17 @@ const Sidebar = ({ setToken }) => {
         border-r-2
       `}>
         <div className='flex flex-col gap-4 pt-6 px-4 text-base'>
-          <NavLink 
-            to='/' 
+          {/* Admin Info */}
+          {adminData && (
+            <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2'>
+              <div className='text-sm font-medium text-blue-800'>{adminData.username}</div>
+              <div className='text-xs text-blue-600 capitalize'>{adminData.role.replace('_', ' ')}</div>
+            </div>
+          )}
+
+          {/* Dashboard - Available to all */}
+          <NavLink
+            to='/'
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
             onClick={() => setIsOpen(false)}
           >
@@ -66,36 +77,9 @@ const Sidebar = ({ setToken }) => {
             <p className='block'>Dashboard</p>
           </NavLink>
 
-          <NavLink 
-            to='/category' 
-            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
-            onClick={() => setIsOpen(false)}
-          >
-
-            <MdLibraryAddCheck size={20} /> 
-            <p className='block'>Category</p>
-          </NavLink>
-          
-          <NavLink 
-            to='/add' 
-            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
-            onClick={() => setIsOpen(false)}
-          >
-            <img className='w-5 h-5' src={assets.addIcon} alt='add-icon' />
-            <p className='block'>Add items</p>
-          </NavLink>
-
-          <NavLink 
-            to='/list' 
-            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
-            onClick={() => setIsOpen(false)}
-          >
-            <img className='w-5 h-5' src={assets.arrow} alt='list-icon' />
-            <p className='block'>List items</p>
-          </NavLink>
-
-          <NavLink 
-            to='/orders' 
+          {/* Orders - Available to all */}
+          <NavLink
+            to='/orders'
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
             onClick={() => setIsOpen(false)}
           >
@@ -103,42 +87,79 @@ const Sidebar = ({ setToken }) => {
             <p className='block'>Orders</p>
           </NavLink>
 
-          <NavLink 
-            to='/preorders' 
+          {/* Categories - Available to all */}
+          <NavLink
+            to='/category'
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
             onClick={() => setIsOpen(false)}
           >
-            <img className='w-5 h-5' src={assets.orderIcon} alt='order-icon' />
-            <p className='block'>PreOrders</p>
+            <MdLibraryAddCheck size={20} />
+            <p className='block'>Category</p>
           </NavLink>
 
+          {/* Add Products - Available to all */}
+          <NavLink
+            to='/add'
+            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+            onClick={() => setIsOpen(false)}
+          >
+            <img className='w-5 h-5' src={assets.addIcon} alt='add-icon' />
+            <p className='block'>Add items</p>
+          </NavLink>
+
+          {/* List Products - Available to all */}
+          <NavLink
+            to='/list'
+            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+            onClick={() => setIsOpen(false)}
+          >
+            <img className='w-5 h-5' src={assets.arrow} alt='list-icon' />
+            <p className='block'>List items</p>
+          </NavLink>
+
+          {/* Messages - Available to all */}
           <NavLink
             to='/messages'
             onClick={() => setIsOpen(false)}
             className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
           >
-            {/* Use an appropriate icon, e.g., BsChatDots or assets.message_icon */}
             <BsChatDots size={18} />
             <p className='block'>Messages</p>
           </NavLink>
 
-          <NavLink
-            to='/affiliates'
-            onClick={() => setIsOpen(false)}
-            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
-          >
-            <BsPeople size={18} />
-            <p className='block'>Affiliates</p>
-          </NavLink>
+          {/* Super Admin Only Routes */}
+          {hasPermission && hasPermission('affiliates') && (
+            <NavLink
+              to='/affiliates'
+              onClick={() => setIsOpen(false)}
+              className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+            >
+              <BsPeople size={18} />
+              <p className='block'>Affiliates</p>
+            </NavLink>
+          )}
 
-          <NavLink
-            to='/settings'
-            className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
-            onClick={() => setIsOpen(false)}
-          >
-            <IoSettings size={20} />
-            <p className='block'>Settings</p>
-          </NavLink>
+          {hasPermission && hasPermission('settings') && (
+            <NavLink
+              to='/settings'
+              className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+              onClick={() => setIsOpen(false)}
+            >
+              <IoSettings size={20} />
+              <p className='block'>Settings</p>
+            </NavLink>
+          )}
+
+          {hasPermission && hasPermission('adminManagement') && (
+            <NavLink
+              to='/admin-management'
+              className='flex items-center gap-3 border border-gray-300 border-r-0 px-3 py-2 rounded-l'
+              onClick={() => setIsOpen(false)}
+            >
+              <BsShield size={18} />
+              <p className='block'>Admin Management</p>
+            </NavLink>
+          )}
 
            <button
                 onClick={logout}

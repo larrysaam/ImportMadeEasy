@@ -1,5 +1,5 @@
 import express from 'express'
-import adminAuth from '../middleware/adminAuth.js';
+import adminAuth, { checkPermission } from '../middleware/adminAuth.js';
 import Product from '../models/productModel.js';
 import Order from '../models/orderModel.js';
 import User from '../models/userModel.js';
@@ -9,7 +9,7 @@ const DashboardRouter = express.Router();
 
 
 // Example backend endpoint structure
-DashboardRouter.get('/dashboard', adminAuth, async (req, res) => {
+DashboardRouter.get('/dashboard', adminAuth, checkPermission('dashboard'), async (req, res) => {
   try {
     const totalProducts = await Product.countDocuments()
     const totalOrders = await Order.countDocuments()
@@ -126,7 +126,7 @@ DashboardRouter.get('/dashboard', adminAuth, async (req, res) => {
 })
 
 // Get all users for admin management
-DashboardRouter.get('/users', adminAuth, async (req, res) => {
+DashboardRouter.get('/users', adminAuth, checkPermission('users'), async (req, res) => {
   try {
     const users = await User.find({}, {
       name: 1,
@@ -146,7 +146,7 @@ DashboardRouter.get('/users', adminAuth, async (req, res) => {
 })
 
 // Get user statistics
-DashboardRouter.get('/users/:userId/stats', adminAuth, async (req, res) => {
+DashboardRouter.get('/users/:userId/stats', adminAuth, checkPermission('users'), async (req, res) => {
   try {
     const { userId } = req.params
 
@@ -195,7 +195,7 @@ DashboardRouter.get('/users/:userId/stats', adminAuth, async (req, res) => {
 })
 
 // Delete a user account
-DashboardRouter.delete('/users/:userId', adminAuth, async (req, res) => {
+DashboardRouter.delete('/users/:userId', adminAuth, checkPermission('users'), async (req, res) => {
   try {
     const { userId } = req.params
 
