@@ -23,6 +23,161 @@ const CLOTHING_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
 const SHOE_SIZES = Array.from({ length: 23 }, (_, i) => (i + 26).toString())
 const KIDS_SHOE_SIZES = Array.from({ length: 13 }, (_, i) => (i + 26).toString())
 
+// Move ColorVariant component outside to prevent re-renders
+const ColorVariant = React.memo(({ index, control, remove, watch, getSizeOptions }) => {
+  const hasSizes = watch('hasSizes')
+
+  return (
+    <div className="border rounded-lg p-4 mb-4 bg-gray-50">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-medium">Color Variant {index + 1}</h3>
+        <button
+          type="button"
+          onClick={() => remove(index)}
+          className="text-red-500 hover:text-red-700 px-3 py-1 rounded border border-red-300 hover:bg-red-50"
+        >
+          Remove Color
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block mb-2 font-medium">Color Name</label>
+          <Controller
+            name={`colors.${index}.colorName`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input {...field} placeholder="e.g., Navy Blue" />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2 font-medium">Color</label>
+          <Controller
+            name={`colors.${index}.colorHex`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={field.value || '#000000'}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    className="h-[42px] w-[100px] rounded border"
+                  />
+                  <Input
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    placeholder="#000000"
+                    className="flex-1"
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block mb-2 font-medium">Color Images (Max 4)</label>
+        <Controller
+          name={`colors.${index}.colorImages`}
+          control={control}
+          render={({ field, fieldState: { error } }) => (
+            <>
+              <FileUpload
+                value={field.value || []}
+                onChange={field.onChange}
+                maxFiles={4}
+                label={`Upload images for ${watch(`colors.${index}.colorName`) || 'this color'}`}
+              />
+              {error && (
+                <p className="text-red-500 text-sm mt-1">{error.message}</p>
+              )}
+            </>
+          )}
+        />
+      </div>
+
+      {hasSizes ? (
+        <div className="sizes-section mt-4">
+          <p className="font-medium mb-4">Sizes and Quantities</p>
+          <Controller
+            name={`colors.${index}.sizes`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {getSizeOptions().map((size) => (
+                    <div key={size} className="flex flex-col gap-2 p-3 border rounded-md">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{size}</span>
+                        <Checkbox
+                          checked={field.value?.some(s => s.size === size) || false}
+                          onCheckedChange={(checked) => {
+                            const currentSizes = field.value || []
+                            const newSizes = checked
+                              ? [...currentSizes, { size, quantity: 0 }]
+                              : currentSizes.filter(s => s.size !== size)
+                            field.onChange(newSizes)
+                          }}
+                        />
+                      </div>
+                      {field.value?.some(s => s.size === size) && (
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Qty"
+                          className="w-full"
+                          value={field.value.find(s => s.size === size)?.quantity || 0}
+                          onChange={(e) => {
+                            const quantity = parseInt(e.target.value) || 0
+                            const newSizes = field.value.map(s =>
+                              s.size === size ? { ...s, quantity } : s
+                            )
+                            field.onChange(newSizes)
+                          }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      ) : (
+        <div className="quantity-section mt-4">
+          <p className="font-medium mb-4">Quantity</p>
+          <Controller
+            name={`colors.${index}.quantity`}
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Enter quantity"
+                  className="w-full max-w-[200px]"
+                  value={field.value || 0}
+                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+      )}
+    </div>
+  )
+})
+
 // Custom File Upload Component
 const FileUpload = ({ value = [], onChange, maxFiles = 4, label = "Upload Images" }) => {
   const fileInputRef = useRef(null)
@@ -519,159 +674,7 @@ const Add = ({token}) => {
     return CLOTHING_SIZES
   }, [watch('category'), watch('sizeType')])
 
-  const ColorVariant = ({ index, control, remove, watch, getSizeOptions }) => {
-    const hasSizes = watch('hasSizes')
 
-    return (
-      <div className="border rounded-lg p-4 mb-4 bg-gray-50">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-medium">Color Variant {index + 1}</h3>
-          <button
-            type="button"
-            onClick={() => remove(index)}
-            className="text-red-500 hover:text-red-700 px-3 py-1 rounded border border-red-300 hover:bg-red-50"
-          >
-            Remove Color
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block mb-2 font-medium">Color Name</label>
-            <Controller
-              name={`colors.${index}.colorName`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <Input {...field} placeholder="e.g., Navy Blue" />
-                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
-                </>
-              )}
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 font-medium">Color</label>
-            <Controller
-              name={`colors.${index}.colorHex`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="color"
-                      value={field.value || '#000000'}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      className="h-[42px] w-[100px] rounded border"
-                    />
-                    <Input
-                      value={field.value || ''}
-                      onChange={(e) => field.onChange(e.target.value)}
-                      placeholder="#000000"
-                      className="flex-1"
-                    />
-                  </div>
-                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
-                </>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block mb-2 font-medium">Color Images (Max 4)</label>
-          <Controller
-            name={`colors.${index}.colorImages`}
-            control={control}
-            render={({ field, fieldState: { error } }) => (
-              <>
-                <FileUpload
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  maxFiles={4}
-                  label={`Upload images for ${watch(`colors.${index}.colorName`) || 'this color'}`}
-                />
-                {error && (
-                  <p className="text-red-500 text-sm mt-1">{error.message}</p>
-                )}
-              </>
-            )}
-          />
-        </div>
-
-        {hasSizes ? (
-          <div className="sizes-section mt-4">
-            <p className="font-medium mb-4">Sizes and Quantities</p>
-            <Controller
-              name={`colors.${index}.sizes`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {getSizeOptions().map((size) => (
-                      <div key={size} className="flex flex-col gap-2 p-3 border rounded-md">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{size}</span>
-                          <Checkbox
-                            checked={field.value?.some(s => s.size === size) || false}
-                            onCheckedChange={(checked) => {
-                              const currentSizes = field.value || []
-                              const newSizes = checked
-                                ? [...currentSizes, { size, quantity: 0 }]
-                                : currentSizes.filter(s => s.size !== size)
-                              field.onChange(newSizes)
-                            }}
-                          />
-                        </div>
-                        {field.value?.some(s => s.size === size) && (
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="Qty"
-                            className="w-full"
-                            value={field.value.find(s => s.size === size)?.quantity || 0}
-                            onChange={(e) => {
-                              const quantity = parseInt(e.target.value) || 0
-                              const newSizes = field.value.map(s =>
-                                s.size === size ? { ...s, quantity } : s
-                              )
-                              field.onChange(newSizes)
-                            }}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
-                </>
-              )}
-            />
-          </div>
-        ) : (
-          <div className="quantity-section mt-4">
-            <p className="font-medium mb-4">Quantity</p>
-            <Controller
-              name={`colors.${index}.quantity`}
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="Enter quantity"
-                    className="w-full max-w-[200px]"
-                    value={field.value || 0}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                  />
-                  {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
-                </>
-              )}
-            />
-          </div>
-        )}
-      </div>
-    )
-  }
 
   if (isLoadingProduct) {
     return (

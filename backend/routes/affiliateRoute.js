@@ -6,7 +6,8 @@ import {
   getAffiliateByCode,
   getAllAffiliates,
   updateAffiliateStatus,
-  getAffiliateStats
+  getAffiliateStats,
+  createTestAffiliate
 } from '../controllers/affiliateController.js'
 import authUser from '../middleware/auth.js'
 import adminAuth from '../middleware/adminAuth.js'
@@ -25,5 +26,6 @@ affiliateRouter.get('/stats', authUser, getAffiliateStats)
 // Admin routes (require admin authentication)
 affiliateRouter.get('/admin/all', adminAuth, getAllAffiliates)
 affiliateRouter.put('/admin/:affiliateId/status', adminAuth, updateAffiliateStatus)
+affiliateRouter.post('/admin/create-test', adminAuth, createTestAffiliate)
 
 export default affiliateRouter

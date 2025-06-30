@@ -22,6 +22,7 @@ const AffiliateManagement = ({ token }) => {
   const [actionType, setActionType] = useState('') // 'approve', 'reject', 'suspend'
   const [actionNotes, setActionNotes] = useState('')
   const [rejectionReason, setRejectionReason] = useState('')
+  const [creatingTest, setCreatingTest] = useState(false)
   
   // Filters and pagination
   const [statusFilter, setStatusFilter] = useState('all')
@@ -43,6 +44,8 @@ const AffiliateManagement = ({ token }) => {
   const fetchAffiliates = async () => {
     try {
       setLoading(true)
+      console.log('Fetching affiliates with:', { currentPage, statusFilter, searchTerm, token: !!token, backendUrl })
+
       const params = new URLSearchParams({
         page: currentPage,
         limit: 10,
@@ -50,34 +53,44 @@ const AffiliateManagement = ({ token }) => {
         ...(searchTerm && { search: searchTerm })
       })
 
-      const response = await fetch(`${backendUrl}/api/affiliate/admin/all?${params}`, {
+      const url = `${backendUrl}/api/affiliate/admin/all?${params}`
+      console.log('Request URL:', url)
+
+      const response = await fetch(url, {
         headers: {
           'token': token
         }
       })
 
+      console.log('Response status:', response.status)
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (data.success) {
         setAffiliates(data.affiliates)
         setTotalPages(data.pagination.pages)
-        
-        // Calculate stats from all affiliates
-        const allAffiliatesResponse = await fetch(`${backendUrl}/api/affiliate/admin/all`, {
-          headers: {
-            'token': token
+
+        // Use stats from backend if available, otherwise calculate from affiliates
+        if (data.stats) {
+          setStats(data.stats)
+        } else {
+          // Calculate stats from all affiliates
+          const allAffiliatesResponse = await fetch(`${backendUrl}/api/affiliate/admin/all`, {
+            headers: {
+              'token': token
+            }
+          })
+
+          const allData = await allAffiliatesResponse.json()
+          if (allData.success) {
+            const statsData = allData.affiliates.reduce((acc, affiliate) => {
+              acc.total++
+              acc[affiliate.status] = (acc[affiliate.status] || 0) + 1
+              return acc
+            }, { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 })
+
+            setStats(statsData)
           }
-        })
-        
-        const allData = await allAffiliatesResponse.json()
-        if (allData.success) {
-          const statsData = allData.affiliates.reduce((acc, affiliate) => {
-            acc.total++
-            acc[affiliate.status] = (acc[affiliate.status] || 0) + 1
-            return acc
-          }, { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 })
-          
-          setStats(statsData)
         }
       } else {
         toast.error(data.message || 'Failed to fetch affiliates')
@@ -123,6 +136,33 @@ const AffiliateManagement = ({ token }) => {
     } catch (error) {
       console.error('Error updating affiliate status:', error)
       toast.error('Failed to update affiliate status')
+    }
+  }
+
+  const createTestAffiliate = async () => {
+    try {
+      setCreatingTest(true)
+      const response = await fetch(`${backendUrl}/api/affiliate/admin/create-test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Test affiliate created successfully')
+        fetchAffiliates() // Refresh the list
+      } else {
+        toast.error(data.message || 'Failed to create test affiliate')
+      }
+    } catch (error) {
+      console.error('Error creating test affiliate:', error)
+      toast.error('Failed to create test affiliate')
+    } finally {
+      setCreatingTest(false)
     }
   }
 
@@ -179,9 +219,18 @@ const AffiliateManagement = ({ token }) => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Affiliate Management</h1>
-          <p className="text-gray-600 mt-1">Manage affiliate applications and accounts</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Affiliate Management</h1>
+            <p className="text-gray-600 mt-1">Manage affiliate applications and accounts</p>
+          </div>
+          <button
+            onClick={createTestAffiliate}
+            disabled={creatingTest}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {creatingTest ? 'Creating...' : 'Create Test Affiliate'}
+          </button>
         </div>
 
         {/* Stats Cards */}

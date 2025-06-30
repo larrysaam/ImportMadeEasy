@@ -216,10 +216,11 @@ const getAffiliateByCode = async (req, res) => {
 // Admin: Get all affiliate applications
 const getAllAffiliates = async (req, res) => {
   try {
+    console.log('getAllAffiliates called with query:', req.query)
     const { page = 1, limit = 10, status, search } = req.query
 
     const query = {}
-    if (status) {
+    if (status && status !== 'all') {
       query.status = status
     }
 
@@ -232,6 +233,8 @@ const getAllAffiliates = async (req, res) => {
       ]
     }
 
+    console.log('Query object:', query)
+
     const affiliates = await affiliateModel.find(query)
       .populate('userId', 'name email')
       .sort({ createdAt: -1 })
@@ -240,9 +243,21 @@ const getAllAffiliates = async (req, res) => {
 
     const total = await affiliateModel.countDocuments(query)
 
+    console.log(`Found ${affiliates.length} affiliates out of ${total} total`)
+
+    // Calculate stats
+    const stats = {
+      total: await affiliateModel.countDocuments(),
+      pending: await affiliateModel.countDocuments({ status: 'pending' }),
+      approved: await affiliateModel.countDocuments({ status: 'approved' }),
+      rejected: await affiliateModel.countDocuments({ status: 'rejected' }),
+      suspended: await affiliateModel.countDocuments({ status: 'suspended' })
+    }
+
     res.json({
       success: true,
       affiliates,
+      stats,
       pagination: {
         current: parseInt(page),
         pages: Math.ceil(total / limit),
@@ -254,7 +269,8 @@ const getAllAffiliates = async (req, res) => {
     console.error('Error getting affiliates:', error)
     res.json({
       success: false,
-      message: 'Failed to get affiliates'
+      message: 'Failed to get affiliates',
+      error: error.message
     })
   }
 }
@@ -388,6 +404,71 @@ const getAffiliateStats = async (req, res) => {
   }
 }
 
+// Create test affiliate (for development/testing)
+const createTestAffiliate = async (req, res) => {
+  try {
+    // Check if test affiliate already exists
+    const existingTest = await affiliateModel.findOne({ affiliateCode: 'TEST123' })
+    if (existingTest) {
+      return res.json({
+        success: false,
+        message: 'Test affiliate already exists'
+      })
+    }
+
+    // Create a test user first (if needed)
+    let testUser = await userModel.findOne({ email: 'test@affiliate.com' })
+    if (!testUser) {
+      testUser = new userModel({
+        name: 'Test Affiliate User',
+        email: 'test@affiliate.com',
+        password: 'hashedpassword123' // In real scenario, this should be properly hashed
+      })
+      await testUser.save()
+    }
+
+    // Create test affiliate
+    const testAffiliate = new affiliateModel({
+      userId: testUser._id,
+      affiliateCode: 'TEST123',
+      status: 'pending',
+      applicationData: {
+        fullName: 'Test Affiliate User',
+        email: 'test@affiliate.com',
+        phone: '+1234567890',
+        website: 'https://testwebsite.com',
+        socialMedia: '@testaffiliate',
+        experience: 'I have 2 years of experience in digital marketing',
+        reason: 'I want to promote your products because I believe in their quality',
+        trafficSource: 'instagram'
+      },
+      stats: {
+        totalClicks: 25,
+        totalSignups: 5,
+        totalSales: 2,
+        totalEarnings: 150,
+        conversionRate: 20
+      }
+    })
+
+    await testAffiliate.save()
+
+    res.json({
+      success: true,
+      message: 'Test affiliate created successfully',
+      affiliate: testAffiliate
+    })
+
+  } catch (error) {
+    console.error('Error creating test affiliate:', error)
+    res.json({
+      success: false,
+      message: 'Failed to create test affiliate',
+      error: error.message
+    })
+  }
+}
+
 export {
   applyAffiliate,
   getAffiliateDashboard,
@@ -395,5 +476,6 @@ export {
   getAffiliateByCode,
   getAllAffiliates,
   updateAffiliateStatus,
-  getAffiliateStats
+  getAffiliateStats,
+  createTestAffiliate
 }
