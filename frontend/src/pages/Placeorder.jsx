@@ -4,12 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { orderSchema } from '@/lib/formSchemas'
 import { Input } from '@/components/ui/input'
 import Title from '@/components/Title'
-import CartTotal from '@/features/shared/CartTotal'
+// import CartTotal from '@/features/shared/CartTotal' // Using custom implementation
 import { ShopContext } from '@/context/ShopContext'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { toast } from 'sonner'
 import { assets } from '@/assets/assets'
+import NumberFlow from '@number-flow/react'
 // Removed direct MeSomb import - now handled by backend
 
 const Placeorder = () => {
@@ -91,6 +92,7 @@ const Placeorder = () => {
       method: 'sea',
       country: 'china'
     }
+    let selectedCountryItems = []
 
     if (checkoutData) {
       try {
@@ -99,37 +101,54 @@ const Placeorder = () => {
           method: parsedData.shippingMode || 'sea',
           country: parsedData.selectedCountry || 'china'
         }
+        // Use the filtered cart items from the selected country
+        selectedCountryItems = parsedData.cartItems || []
       } catch (error) {
         console.error('Error parsing checkout data:', error)
       }
     }
 
-    // Collect items from cart
-    const orderItems = Object.entries(cartItems).flatMap(([productId, sizes]) =>
-      Object.entries(sizes).map(([size, quantity]) => {
-        if (quantity > 0) {
-          const product = products.find(p => p._id === productId)
-          if (product) {
-            return {
-              productId,
-              name: product.name,
-              price: product.price,
-              weight: product.weight || 1, // Add weight for shipping calculation
-              // Add a check to handle missing images
-              image: product.images && product.images.length > 0 ? product.images[0] : null,
-              size,
-              quantity
-            }
-          }
+    // Use selected country items instead of all cart items
+    const orderItems = selectedCountryItems.map(item => {
+      const product = products.find(p => p._id === item.id)
+      if (product) {
+        return {
+          productId: item.id,
+          name: product.name,
+          price: product.price,
+          weight: product.weight || 1, // Add weight for shipping calculation
+          // Add a check to handle missing images
+          image: product.images && product.images.length > 0 ? product.images[0] : null,
+          size: item.size,
+          quantity: item.quantity
         }
-        return null
-      }).filter(Boolean)
-    )
+      }
+      return null
+    }).filter(Boolean)
+
+    // Calculate amount for selected country items only
+    const selectedCountryAmount = selectedCountryItems.reduce((total, item) => {
+      const product = products.find(p => p._id === item.id)
+      if (product) {
+        // Apply bulk discount if applicable
+        const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
+        const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
+
+        let itemPrice = product.price;
+        if (item.quantity >= bulkDiscountMinQuantity) {
+          const discountAmount = itemPrice * (bulkDiscountPercentage / 100);
+          itemPrice = itemPrice - discountAmount;
+        }
+
+        return total + (itemPrice * item.quantity);
+      }
+      return total;
+    }, 0)
 
     return {
       address: formData,
       items: orderItems,
-      amount: getCartAmount(), // Delivery fee excluded - paid on delivery
+      amount: selectedCountryAmount, // Use selected country amount instead of getCartAmount()
       paymentMethod: 'mobile',
       shipping: shippingData
     }
@@ -369,7 +388,78 @@ const Placeorder = () => {
       {/* Right Side - Cart + Payment */}
       <div className='px-4 sm:px-14'>
         <div className='mt-8 min-w-80'>
-          <CartTotal />
+          {/* Custom Cart Total for Selected Country */}
+          <div className='w-full'>
+            <div className='text-2xl'>
+              <Title text1='CART' text2='TOTALS' />
+            </div>
+            <div className='flex flex-col gap-2 mt-2 text-base'>
+              {(() => {
+                // Load checkout data to get selected country items
+                const checkoutData = localStorage.getItem('checkoutData')
+                let selectedCountryItems = []
+                let selectedCountry = 'china'
+
+                if (checkoutData) {
+                  try {
+                    const parsedData = JSON.parse(checkoutData)
+                    selectedCountryItems = parsedData.cartItems || []
+                    selectedCountry = parsedData.selectedCountry || 'china'
+                  } catch (error) {
+                    console.error('Error parsing checkout data:', error)
+                  }
+                }
+
+                // Calculate totals for selected country
+                const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
+                const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
+
+                const discountedTotal = selectedCountryItems.reduce((total, item) => {
+                  const product = products.find(p => p._id === item.id)
+                  if (product) {
+                    let itemPrice = product.price;
+                    if (item.quantity >= bulkDiscountMinQuantity) {
+                      const discountAmount = itemPrice * (bulkDiscountPercentage / 100);
+                      itemPrice = itemPrice - discountAmount;
+                    }
+                    return total + (itemPrice * item.quantity);
+                  }
+                  return total;
+                }, 0)
+
+                return (
+                  <>
+                    <div className='flex justify-between'>
+                      <p>Subtotal ({selectedCountry === 'nigeria' ? 'Nigeria' : 'China'} items)</p>
+                      <NumberFlow
+                        value={discountedTotal}
+                        format={{
+                          style: 'currency',
+                          currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0
+                        }}
+                      />
+                    </div>
+                    <hr/>
+                    <div className='text-lg flex justify-between'>
+                      <b>Total (excluding delivery)</b>
+                      <NumberFlow
+                        className='font-semibold'
+                        value={discountedTotal}
+                        format={{
+                          style: 'currency',
+                          currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0
+                        }}
+                      />
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+          </div>
           <div className='mt-4 p-4 bg-gray-50 rounded-md'>
             <h3 className='font-medium mb-2 text-sm'>Delivery Details</h3>
             <div className='flex flex-col gap-2 text-sm'>
