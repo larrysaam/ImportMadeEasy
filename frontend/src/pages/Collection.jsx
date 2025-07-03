@@ -206,7 +206,7 @@ const Collection = () => {
 
 
   return (
-    <div className='flex flex-col px-3 sm:px-4 md:px-8 md:flex-row gap-1 sm:gap-10 pt-4 sm:pt-10 border-t animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
+    <div className='flex flex-col px-0 sm:px-3 md:px-6 md:flex-row gap-1 sm:gap-10 pt-4 sm:pt-10 border-t animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
       {/* Mobile Filter Header */}
       <div className='min-w-60'>
         {/* Mobile Header - Enhanced with modern card design */}
@@ -531,7 +531,7 @@ const Collection = () => {
       </div>
 
       {/* Products Section - Enhanced Mobile */}
-      <div className='flex-1 bg-white md:bg-transparent rounded-t-3xl md:rounded-none -mt-4 md:mt-0 pt-6 md:pt-0 px-4 md:px-0'>
+      <div className='flex-1 bg-white md:bg-transparent rounded-t-3xl md:rounded-none -mt-4 md:mt-0 pt-6 md:pt-0 px-3 md:px-0'>
         {/* Header Section */}
         <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-6'>
           {/* Enhanced Title for Mobile */}

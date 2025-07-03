@@ -22,6 +22,7 @@ const Cart = () => {
   const [shippingMode, setShippingMode] = useState('sea') // 'air', 'sea', 'land'
   const [cartByCountry, setCartByCountry] = useState({ nigeria: [], china: [] })
   const [selectedCountryForCheckout, setSelectedCountryForCheckout] = useState('')
+  const [selectedCountryView, setSelectedCountryView] = useState('all') // 'all', 'nigeria', 'china'
   
   useEffect(() => {
 
@@ -88,6 +89,13 @@ const Cart = () => {
     }, 0);
   };
 
+  
+  const flagImages = {
+    Nigeria: "https://flagcdn.com/w320/ng.png",
+    China: "https://flagcdn.com/w320/cn.png"
+  }
+
+
   // Helper function to calculate shipping cost
   const calculateShippingCost = (items, mode) => {
     const totalWeight = calculateTotalWeight(items);
@@ -99,20 +107,85 @@ const Cart = () => {
     return totalWeight * (rates[mode] || rates.sea);
   };
 
-  // Get current cart items for checkout (based on country selection)
-  const getCurrentCartItems = () => {
-    if (selectedCountryForCheckout) {
-      return cartByCountry[selectedCountryForCheckout] || [];
+  // Calculate total shipping cost for mixed cart (both countries)
+  const calculateTotalShippingCost = () => {
+    let totalCost = 0;
+
+    // Calculate Nigeria shipping (always land)
+    if (cartByCountry.nigeria.length > 0) {
+      totalCost += calculateShippingCost(cartByCountry.nigeria, 'land');
     }
 
-    // If only one country has items, return those
+    // Calculate China shipping (air or sea based on selection)
+    if (cartByCountry.china.length > 0) {
+      totalCost += calculateShippingCost(cartByCountry.china, shippingMode);
+    }
+
+    return totalCost;
+  };
+
+  // Bulk discount configuration from environment variables
+  const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
+  const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
+
+  // Helper function to check if item qualifies for bulk discount
+  const qualifiesForBulkDiscount = (quantity) => {
+    return quantity >= bulkDiscountMinQuantity;
+  };
+
+  // Helper function to calculate discounted price for an item
+  const calculateDiscountedPrice = (originalPrice, quantity) => {
+    if (qualifiesForBulkDiscount(quantity)) {
+      const discountAmount = originalPrice * (bulkDiscountPercentage / 100);
+      return originalPrice - discountAmount;
+    }
+    return originalPrice;
+  };
+
+  // Helper function to calculate total discount amount for an item
+  const calculateDiscountAmount = (originalPrice, quantity) => {
+    if (qualifiesForBulkDiscount(quantity)) {
+      return originalPrice * (bulkDiscountPercentage / 100);
+    }
+    return 0;
+  };
+
+  // Helper function to calculate item total with discount
+  const calculateItemTotal = (originalPrice, quantity) => {
+    const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+    return discountedPrice * quantity;
+  };
+
+  // Get current cart items for display (based on country view selector)
+  const getCurrentCartItems = () => {
+    // If user has selected a specific country view, show only that country's items
+    if (selectedCountryView === 'nigeria') {
+      return cartByCountry.nigeria;
+    } else if (selectedCountryView === 'china') {
+      return cartByCountry.china;
+    } else {
+      // Show all items (default view)
+      return cartData;
+    }
+  };
+
+  // Get current cart items for checkout (based on country view selection)
+  const getCheckoutItems = () => {
+    // If user has selected a specific country view, use that for checkout
+    if (selectedCountryView === 'nigeria') {
+      return cartByCountry.nigeria;
+    } else if (selectedCountryView === 'china') {
+      return cartByCountry.china;
+    }
+
+    // If "all" is selected, determine based on cart contents
     if (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0) {
       return cartByCountry.nigeria;
     } else if (cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) {
       return cartByCountry.china;
     }
 
-    // If mixed cart, return all items (shouldn't happen in checkout)
+    // If mixed cart and "all" selected, return all items
     return cartData;
   };
 
@@ -296,10 +369,166 @@ const Cart = () => {
   };
 
   return (
-    <div className='px-3 sm:px-14 border-t pt-8 sm:pt-14 animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
+    <div className='px-3 sm:px-14 border-t pt-8 sm:pt-14 animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen pb-24 sm:pb-0'>
       <div className='text-lg sm:text-2xl mb-4 sm:mb-6 px-1 sm:px-0'>
         <Title text1='YOUR' text2='CART'/>
       </div>
+
+      {/* Mixed Cart Message */}
+      {cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && (
+        <div className="hidden sm:block lg:blog bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-semibold text-blue-800 mb-1">Multiple Countries in Cart</h3>
+              
+              <p className="text-xs text-blue-600">
+                Use the country selector below to view items by country, then select a country to proceed with checkout.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Country Selector - Collection Page Style */}
+      {(cartByCountry.nigeria.length > 0 || cartByCountry.china.length > 0) && (
+        <div className="mb-6">
+          {/* Desktop View */}
+          <div className="hidden sm:flex items-center gap-4 flex-wrap">
+            <span className="text-sm font-medium text-gray-700">View cart by country:</span>
+            <div className="flex items-center gap-2">
+              {/* All Countries Button */}
+              <button
+                onClick={() => setSelectedCountryView('all')}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  selectedCountryView === 'all'
+                    ? 'bg-brand text-white shadow-md'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                All Countries ({cartData.length})
+              </button>
+
+              {/* Nigeria Button */}
+              {cartByCountry.nigeria.length > 0 && (
+                <button
+                  onClick={() => setSelectedCountryView('nigeria')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedCountryView === 'nigeria'
+                      ? 'bg-brand text-white shadow-md'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <img src={flagImages.Nigeria} alt="Nigeria" className="w-4 h-3 object-cover rounded-sm" />
+                  Nigeria ({cartByCountry.nigeria.length})
+                </button>
+              )}
+
+              {/* China Button */}
+              {cartByCountry.china.length > 0 && (
+                <button
+                  onClick={() => setSelectedCountryView('china')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedCountryView === 'china'
+                      ? 'bg-brand text-white shadow-md'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <img src={flagImages.China} alt="China" className="w-4 h-3 object-cover rounded-sm" />
+                  China ({cartByCountry.china.length})
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile View - Collection Page Style */}
+          <div className="block sm:hidden">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium text-gray-700">View by country:</span>
+              <span className="text-xs text-gray-500">
+                {selectedCountryView === 'all' ? `${cartData.length} items` :
+                 selectedCountryView === 'nigeria' ? `${cartByCountry.nigeria.length} items` :
+                 `${cartByCountry.china.length} items`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              {/* All Countries - Mobile */}
+              <button
+                onClick={() => setSelectedCountryView('all')}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px] ${
+                  selectedCountryView === 'all'
+                    ? 'bg-brand text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  selectedCountryView === 'all' ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  <svg className={`w-4 h-4 ${selectedCountryView === 'all' ? 'text-white' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-medium">All</span>
+                <span className="text-xs opacity-75">({cartData.length})</span>
+              </button>
+
+              {/* Nigeria - Mobile */}
+              {cartByCountry.nigeria.length > 0 && (
+                <button
+                  onClick={() => setSelectedCountryView('nigeria')}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px] ${
+                    selectedCountryView === 'nigeria'
+                      ? 'bg-brand text-white shadow-lg scale-105'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${
+                    selectedCountryView === 'nigeria' ? 'border-white/30' : 'border-gray-200'
+                  }`}>
+                    <img
+                      src={flagImages.Nigeria}
+                      alt="Nigeria"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-xs font-medium">Nigeria</span>
+                  <span className="text-xs opacity-75">({cartByCountry.nigeria.length})</span>
+                </button>
+              )}
+
+              {/* China - Mobile */}
+              {cartByCountry.china.length > 0 && (
+                <button
+                  onClick={() => setSelectedCountryView('china')}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 min-w-[60px] ${
+                    selectedCountryView === 'china'
+                      ? 'bg-brand text-white shadow-lg scale-105'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full overflow-hidden border-2 ${
+                    selectedCountryView === 'china' ? 'border-white/30' : 'border-gray-200'
+                  }`}>
+                    <img
+                      src={flagImages.China}
+                      alt="China"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-xs font-medium">China</span>
+                  <span className="text-xs opacity-75">({cartByCountry.china.length})</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className='space-y-0 sm:space-y-0'>
         {
@@ -313,21 +542,21 @@ const Cart = () => {
               return (
                 <div
                   key={index}
-                  className='relative py-4 sm:py-6 border-t last:border-y text-gray-700
+                  className='relative py-2 sm:py-6 border-t last:border-y text-gray-700
                     grid grid-cols-1 sm:grid-cols-[3fr_1fr_0.5fr_0.5fr]
-                    items-start sm:items-center gap-3 sm:gap-4
+                    items-start sm:items-center gap-2 sm:gap-4
                     bg-white sm:bg-transparent rounded-lg sm:rounded-none
-                    p-3 sm:p-0 mb-3 sm:mb-0 shadow-sm sm:shadow-none'
+                    p-2 sm:p-0 mb-2 sm:mb-0 shadow-sm sm:shadow-none'
                 >
                   {/* Product info section */}
-                  <div className='flex items-start gap-3 sm:gap-6'>
+                  <div className='flex items-start gap-2 sm:gap-6'>
                     {/* Make image clickable */}
                     <div
                       onClick={() => navigate(`/product/${item.id}`)}
                       className="cursor-pointer hover:opacity-80 transition-opacity relative flex-shrink-0"
                     >
                       <img
-                        className='w-20 h-20 sm:w-32 sm:h-32 object-cover rounded-lg border border-gray-100'
+                        className='w-16 h-16 sm:w-32 sm:h-32 object-cover rounded-md border border-gray-100'
                         src={(() => {
                           try {
                             // Show color-specific image if available
@@ -355,31 +584,31 @@ const Cart = () => {
                         ></div>
                       )}
                     </div>
-                    <div className='flex flex-col gap-2 sm:gap-3 flex-1 min-w-0'>
+                    <div className='flex flex-col gap-1 sm:gap-3 flex-1 min-w-0'>
                       {/* Make product name clickable */}
                       <p
                         onClick={() => navigate(`/product/${item.id}`)}
-                        className='text-sm sm:text-base lg:text-lg font-semibold cursor-pointer hover:text-blue-600 transition-colors line-clamp-2'
+                        className='text-xs sm:text-base lg:text-lg font-semibold cursor-pointer hover:text-blue-600 transition-colors line-clamp-2 leading-tight'
                       >
                         {productData.name}
                       </p>
 
                       {/* Mobile: Color and Size info in compact row */}
                       <div className='block sm:hidden'>
-                        <div className='flex items-center gap-3 text-xs text-gray-600 mb-2'>
+                        <div className='flex items-center gap-2 text-xs text-gray-600 mb-1'>
                           {item.color && (
                             <div className="flex items-center gap-1">
                               <div
-                                className="w-3 h-3 rounded-full border border-gray-300"
+                                className="w-2.5 h-2.5 rounded-full border border-gray-300"
                                 style={{ backgroundColor: item.colorHex || '#ccc' }}
                               ></div>
-                              <span className="font-medium">{item.color}</span>
+                              <span className="font-medium text-xs">{item.color}</span>
                             </div>
                           )}
                           {item.size !== 'N/A' && (
                             <div className="flex items-center gap-1">
-                              <span>Size:</span>
-                              <span className="font-medium">{item.size}</span>
+                              <span className="text-xs">Size:</span>
+                              <span className="font-medium text-xs">{item.size}</span>
                             </div>
                           )}
                         </div>
@@ -401,46 +630,95 @@ const Cart = () => {
                         </div>
                       )}
 
-                      {/* Mobile price with better styling */}
-                      <div className='block sm:hidden bg-gray-50 px-3 py-2 rounded-md'>
-                        <div className='flex justify-between items-center'>
-                          <span className='text-xs text-gray-600'>Total:</span>
-                          <span className='text-sm font-bold text-brand'>
-                            <NumberFlow
-                              value={productData.price * item.quantity}
-                              format={{
-                                style: 'currency',
-                                currency: import.meta.env.VITE_CURRENCY || 'XAF',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                              }}
-                            />
-                          </span>
-                        </div>
-                        <div className='flex justify-between items-center mt-1'>
-                          <span className='text-xs text-gray-500'>
-                            {new Intl.NumberFormat('fr-FR', {
-                              minimumFractionDigits: 0
-                            }).format(productData.price)} FCFA × {item.quantity}
-                          </span>
-                        </div>
+                      {/* Mobile price with better styling and bulk discount */}
+                      <div className='block sm:hidden bg-gray-50 px-2 py-1.5 rounded-md'>
+                        {/* Check if item qualifies for bulk discount */}
+                        {qualifiesForBulkDiscount(item.quantity) ? (
+                          <>
+                            {/* Discounted Price Display */}
+                            <div className='flex justify-between items-center'>
+                              <span className='text-xs text-gray-600'>Total:</span>
+                              <span className='text-sm font-bold text-brand'>
+                                <NumberFlow
+                                  value={calculateItemTotal(productData.price, item.quantity)}
+                                  format={{
+                                    style: 'currency',
+                                    currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0
+                                  }}
+                                />
+                              </span>
+                            </div>
+                            {/* Original Price (Crossed Out) */}
+                            <div className='flex justify-between items-center'>
+                              <span className='text-xs text-green-600 font-medium'>
+                                -{bulkDiscountPercentage}% bulk discount
+                              </span>
+                              <span className='text-xs text-gray-400 line-through'>
+                                {new Intl.NumberFormat('fr-FR', {
+                                  minimumFractionDigits: 0
+                                }).format(productData.price * item.quantity)} FCFA
+                              </span>
+                            </div>
+                            {/* Price Breakdown */}
+                            <div className='flex justify-between items-center'>
+                              <span className='text-xs text-gray-500'>
+                                {new Intl.NumberFormat('fr-FR', {
+                                  minimumFractionDigits: 0
+                                }).format(calculateDiscountedPrice(productData.price, item.quantity))} FCFA × {item.quantity}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* Regular Price Display */}
+                            <div className='flex justify-between items-center'>
+                              <span className='text-xs text-gray-600'>Total:</span>
+                              <span className='text-sm font-bold text-brand'>
+                                <NumberFlow
+                                  value={productData.price * item.quantity}
+                                  format={{
+                                    style: 'currency',
+                                    currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0
+                                  }}
+                                />
+                              </span>
+                            </div>
+                            <div className='flex justify-between items-center'>
+                              <span className='text-xs text-gray-500'>
+                                {new Intl.NumberFormat('fr-FR', {
+                                  minimumFractionDigits: 0
+                                }).format(productData.price)} FCFA × {item.quantity}
+                              </span>
+                              {/* Show how many more items needed for discount */}
+                              {item.quantity < bulkDiscountMinQuantity && (
+                                <span className='text-xs text-blue-600'>
+                                  +{bulkDiscountMinQuantity - item.quantity} for {bulkDiscountPercentage}% off
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                       {/* Mobile Controls - Organized in sections */}
-                      <div className='block sm:hidden space-y-3 mt-3'>
+                      <div className='block sm:hidden space-y-2 mt-2'>
                         {/* Color and Size Selection Row */}
-                        <div className='flex items-center gap-2'>
+                        <div className='flex items-center gap-1.5'>
                           {/* Color Selection */}
                           {productData.colors && productData.colors.length > 0 && (
                             <Select
                               value={item.color || ''}
                               onValueChange={(newColor) => handleColorChange(item, newColor)}
                             >
-                              <SelectTrigger className="flex-1 h-9 text-xs">
+                              <SelectTrigger className="flex-1 h-8 text-xs">
                                 <SelectValue placeholder="Color">
                                   {item.color && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                       <div
-                                        className="w-3 h-3 rounded-full border border-gray-300 flex-shrink-0"
+                                        className="w-2.5 h-2.5 rounded-full border border-gray-300 flex-shrink-0"
                                         style={{
                                           backgroundColor: item.colorHex || '#ccc'
                                         }}
@@ -475,7 +753,7 @@ const Cart = () => {
                               value={item.size}
                               onValueChange={(newSize) => handleSizeChange(item, newSize)}
                             >
-                              <SelectTrigger className="w-20 h-9 text-xs">
+                              <SelectTrigger className="w-16 h-8 text-xs">
                                 <SelectValue placeholder="Size">
                                   {item.size}
                                 </SelectValue>
@@ -508,7 +786,7 @@ const Cart = () => {
 
                         {/* Quantity and Delete Row */}
                         <div className='flex items-center justify-between'>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <span className='text-xs text-gray-600'>Qty:</span>
                             <div className="flex items-center border rounded-md bg-white">
                               {/* Decrement Button */}
@@ -519,9 +797,9 @@ const Cart = () => {
                                   validateInventory(item.id, item.size, item.colorHex, newValue)
                                 }}
                                 disabled={item.quantity <= 1}
-                                className="flex items-center justify-center w-8 h-9 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-md"
+                                className="flex items-center justify-center w-6 h-7 text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-md"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                                 </svg>
                               </button>
@@ -539,7 +817,7 @@ const Cart = () => {
                                   updateQuantity(item.id, item.cartKey, newValue)
                                   validateInventory(item.id, item.size, item.colorHex, newValue)
                                 }}
-                                className='w-12 h-9 text-center text-sm border-0 border-l border-r border-gray-200 focus:outline-none focus:ring-0'
+                                className='w-10 h-7 text-center text-xs border-0 border-l border-r border-gray-200 focus:outline-none focus:ring-0'
                               />
 
                               {/* Increment Button */}
@@ -549,9 +827,9 @@ const Cart = () => {
                                   updateQuantity(item.id, item.cartKey, newValue)
                                   validateInventory(item.id, item.size, item.colorHex, newValue)
                                 }}
-                                className="flex items-center justify-center w-8 h-9 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-r-md"
+                                className="flex items-center justify-center w-6 h-7 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-r-md"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                               </button>
@@ -563,12 +841,12 @@ const Cart = () => {
                             onClick={() => {
                               updateQuantity(item.id, item.cartKey, 0);
                             }}
-                            className='flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors'
+                            className='flex items-center gap-1 px-2 py-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors'
                           >
                             <img
                               src={assets.deleteIcon}
                               alt='Remove item'
-                              className='w-4 h-4'
+                              className='w-3 h-3'
                             />
                             <span className='text-xs'>Remove</span>
                           </button>
@@ -679,17 +957,54 @@ const Cart = () => {
                     </div>
                   </div>
 
-                  {/* Desktop price - hidden on mobile */}
-                  <NumberFlow
-                    className='hidden sm:block w-fit mx-auto text-brand'
-                    value={productData.price * item.quantity}
-                    format={{
-                      style: 'currency',
-                      currency: import.meta.env.VITE_CURRENCY || 'XAF',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0
-                    }}
-                  />
+                  {/* Desktop price with bulk discount - hidden on mobile */}
+                  <div className='hidden sm:block w-fit mx-auto text-center'>
+                    {qualifiesForBulkDiscount(item.quantity) ? (
+                      <div className="space-y-1">
+                        {/* Discounted Price */}
+                        <NumberFlow
+                          className='text-brand font-semibold'
+                          value={calculateItemTotal(productData.price, item.quantity)}
+                          format={{
+                            style: 'currency',
+                            currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          }}
+                        />
+                        {/* Original Price (Crossed Out) */}
+                        <div className="text-xs text-gray-400 line-through">
+                          {new Intl.NumberFormat('fr-FR', {
+                            minimumFractionDigits: 0
+                          }).format(productData.price * item.quantity)} FCFA
+                        </div>
+                        {/* Discount Badge */}
+                        <div className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">
+                          -{bulkDiscountPercentage}% bulk
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {/* Regular Price */}
+                        <NumberFlow
+                          className='text-brand font-semibold'
+                          value={productData.price * item.quantity}
+                          format={{
+                            style: 'currency',
+                            currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          }}
+                        />
+                        {/* Discount Incentive */}
+                        {item.quantity < bulkDiscountMinQuantity && (
+                          <div className="text-xs text-blue-600">
+                            +{bulkDiscountMinQuantity - item.quantity} for {bulkDiscountPercentage}% off
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Desktop delete button - hidden on mobile */}
                   <button 
@@ -721,35 +1036,7 @@ const Cart = () => {
         <div className='bg-white rounded-lg shadow-sm border p-4'>
           <CartTotal />
 
-          {/* Country Selection for Mixed Cart */}
-          {cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && (
-            <div className='mt-4 p-3 bg-blue-50 rounded-md border border-blue-200'>
-              <h3 className='font-semibold mb-3 text-sm text-blue-800'>Select Country to Checkout</h3>
-              <p className='text-xs text-blue-600 mb-3'>Your cart contains items from different countries. Please checkout each country separately.</p>
-              <div className='space-y-2'>
-                <button
-                  onClick={() => setSelectedCountryForCheckout('nigeria')}
-                  className={`w-full p-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedCountryForCheckout === 'nigeria'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
-                  }`}
-                >
-                  Nigeria ({cartByCountry.nigeria.length} items) - Land Shipping
-                </button>
-                <button
-                  onClick={() => setSelectedCountryForCheckout('china')}
-                  className={`w-full p-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedCountryForCheckout === 'china'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
-                  }`}
-                >
-                  China ({cartByCountry.china.length} items) - Air/Sea Shipping
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* Shipping Mode Selection for Chinese Products */}
           {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
@@ -822,8 +1109,8 @@ const Cart = () => {
                 <span className='text-gray-600'>Delivery Time:</span>
                 <span className='font-semibold text-gray-900'>
                   {(() => {
-                    if (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0) return '3-5 days';
-                    if (selectedCountryForCheckout === 'nigeria') return '3-5 days';
+                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '3-5 days';
+                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '5-10 days' : '15-25 days';
                     return shippingMode === 'air' ? '5-10 days' : '15-25 days';
                   })()}
                 </span>
@@ -831,36 +1118,7 @@ const Cart = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              // Store shipping info in localStorage for checkout
-              const checkoutData = {
-                shippingMode: cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode,
-                selectedCountry: selectedCountryForCheckout || (cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china'),
-                cartItems: getCurrentCartItems()
-              };
-              localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
-              if (token) {
-                navigate('/place-order');
-              } else {
-                navigate('/login', { state: { from: '/cart' } });
-              }
-            }}
-            disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)}
-            className={`w-full mt-4 py-4 rounded-lg font-semibold text-sm transition-all duration-300
-              ${hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-brand text-white hover:bg-brand-dark shadow-md hover:shadow-lg'
-              }`}
-          >
-            {hasStockError
-              ? 'Fix stock issues to continue'
-              : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)
-                ? 'Select country to continue'
-                : 'Proceed to Checkout'
-            }
-          </button>
         </div>
       </div>
 
@@ -869,35 +1127,7 @@ const Cart = () => {
         <div className='w-full sm:w-1/3 mt-8 sm:mt-0'>
           <CartTotal />
 
-          {/* Country Selection for Mixed Cart */}
-          {cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && (
-            <div className='mt-4 p-4 bg-blue-50 rounded-md border border-blue-200'>
-              <h3 className='font-medium mb-3 text-sm text-blue-800'>Select Country to Checkout</h3>
-              <p className='text-xs text-blue-600 mb-3'>Your cart contains items from different countries. Please checkout each country separately.</p>
-              <div className='space-y-2'>
-                <button
-                  onClick={() => setSelectedCountryForCheckout('nigeria')}
-                  className={`w-full p-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedCountryForCheckout === 'nigeria'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
-                  }`}
-                >
-                  Nigeria ({cartByCountry.nigeria.length} items) - Land Shipping
-                </button>
-                <button
-                  onClick={() => setSelectedCountryForCheckout('china')}
-                  className={`w-full p-2 rounded-md text-sm font-medium transition-colors ${
-                    selectedCountryForCheckout === 'china'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
-                  }`}
-                >
-                  China ({cartByCountry.china.length} items) - Air/Sea Shipping
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* Shipping Mode Selection for Chinese Products */}
           {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
@@ -968,8 +1198,8 @@ const Cart = () => {
                 <p>Estimated Delivery Time:</p>
                 <p className='font-medium'>
                   {(() => {
-                    if (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0) return '3-5 days';
-                    if (selectedCountryForCheckout === 'nigeria') return '3-5 days';
+                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '3-5 days';
+                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '5-10 days' : '15-25 days';
                     return shippingMode === 'air' ? '5-10 days' : '15-25 days';
                   })()}
                 </p>
@@ -982,9 +1212,18 @@ const Cart = () => {
               onClick={() => {
                 // Store shipping info in localStorage for checkout
                 const checkoutData = {
-                  shippingMode: cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode,
-                  selectedCountry: selectedCountryForCheckout || (cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china'),
-                  cartItems: getCurrentCartItems()
+                  shippingMode: (() => {
+                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) {
+                      return 'land';
+                    }
+                    return shippingMode;
+                  })(),
+                  selectedCountry: (() => {
+                    if (selectedCountryView === 'nigeria') return 'nigeria';
+                    if (selectedCountryView === 'china') return 'china';
+                    return cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china';
+                  })(),
+                  cartItems: getCheckoutItems()
                 };
                 localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
@@ -994,16 +1233,16 @@ const Cart = () => {
                   navigate('/login', { state: { from: '/cart' } });
                 }
               }}
-              disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)}
+              disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')}
               className={`bg-brand text-white text-xs sm:text-sm my-8 px-4 py-3 transition-all duration-500
-                ${hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)
+                ${hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-brand-dark'
                 }`}
             >
               {hasStockError
                 ? 'Fix stock issues to continue'
-                : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && !selectedCountryForCheckout)
+                : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
                   ? 'Select country to continue'
                   : 'Proceed to checkout'
               }
@@ -1050,6 +1289,246 @@ const Cart = () => {
               </div>
             )
           ))}
+        </div>
+      </div>
+
+      {/* Fixed Mobile Checkout Button with Total */}
+      <div className='block sm:hidden fixed bottom-0 left-0 right-0 z-50'>
+        <div className="bg-white shadow-2xl border-t border-gray-200 p-3 space-y-2">
+          {/* Compact Total Amount Display */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-700">Total:</span>
+              <div className="text-sm font-bold text-gray-900">
+                <NumberFlow
+                  value={(() => {
+                    // Use current cart items based on country view selection
+                    const currentItems = getCurrentCartItems();
+                    return currentItems.reduce((total, item) => {
+                      const product = products.find(p => p._id === item.id);
+                      if (product) {
+                        // Use discounted price calculation
+                        return total + calculateItemTotal(product.price, item.quantity);
+                      }
+                      return total;
+                    }, 0);
+                  })()}
+                  format={{
+                    style: 'currency',
+                    currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  }}
+                />
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500">
+                {(() => {
+                  const currentItems = getCurrentCartItems();
+                  return `${currentItems.length} item${currentItems.length !== 1 ? 's' : ''}`;
+                })()}
+              </div>
+              {/* Show bulk discount savings if any */}
+              {(() => {
+                const currentItems = getCurrentCartItems();
+                const totalSavings = currentItems.reduce((savings, item) => {
+                  const product = products.find(p => p._id === item.id);
+                  if (product && qualifiesForBulkDiscount(item.quantity)) {
+                    const originalTotal = product.price * item.quantity;
+                    const discountedTotal = calculateItemTotal(product.price, item.quantity);
+                    return savings + (originalTotal - discountedTotal);
+                  }
+                  return savings;
+                }, 0);
+
+                return totalSavings > 0 ? (
+                  <div className="text-xs text-green-600 font-medium">
+                    Saved: {new Intl.NumberFormat('fr-FR', {
+                      minimumFractionDigits: 0
+                    }).format(totalSavings)} FCFA
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          </div>
+
+          {/* Compact Delivery Method Selection - Mobile */}
+          {(() => {
+            // Show delivery method based on selected country view
+            if (selectedCountryView === 'nigeria') {
+              // Nigeria only - show land shipping (fixed)
+              return (
+                <div className="bg-green-50 rounded-md p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-green-800">Delivery:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                        <span className="text-xs text-green-800 font-medium">Land (1,000/kg)</span>
+                      </div>
+                      <span className="text-xs text-green-600">3-5 days</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else if (selectedCountryView === 'china') {
+              // China only - show air/sea options
+              return (
+                <div className="bg-blue-50 rounded-md p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-blue-800">Delivery:</span>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="shippingModeMobile"
+                          value="sea"
+                          checked={shippingMode === 'sea'}
+                          onChange={(e) => setShippingMode(e.target.value)}
+                          className="text-blue-600 w-3 h-3"
+                        />
+                        <span className="text-xs text-blue-800">Sea (1,100/kg)</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="shippingModeMobile"
+                          value="air"
+                          checked={shippingMode === 'air'}
+                          onChange={(e) => setShippingMode(e.target.value)}
+                          className="text-blue-600 w-3 h-3"
+                        />
+                        <span className="text-xs text-blue-800">Air (8,500/kg)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              );
+            } else if (selectedCountryView === 'all' && cartByCountry.china.length > 0) {
+              // Mixed cart with "all" selected - show China options (since Nigeria is fixed)
+              return (
+                <div className="bg-blue-50 rounded-md p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-blue-800">China Delivery:</span>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="shippingModeMobile"
+                          value="sea"
+                          checked={shippingMode === 'sea'}
+                          onChange={(e) => setShippingMode(e.target.value)}
+                          className="text-blue-600 w-3 h-3"
+                        />
+                        <span className="text-xs text-blue-800">Sea (1,100/kg)</span>
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="shippingModeMobile"
+                          value="air"
+                          checked={shippingMode === 'air'}
+                          onChange={(e) => setShippingMode(e.target.value)}
+                          className="text-blue-600 w-3 h-3"
+                        />
+                        <span className="text-xs text-blue-800">Air (8,500/kg)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return null; // No delivery method selection needed
+          })()}
+
+          {/* Compact Shipping Fee Display */}
+          <div className="flex items-center justify-between py-1 px-2 bg-orange-50 rounded-md">
+            <span className="text-xs text-orange-700 font-medium">Shipping:</span>
+            <div className="text-right">
+              <div className="text-xs font-bold text-orange-800">
+                <NumberFlow
+                  value={(() => {
+                    const currentItems = getCurrentCartItems();
+
+                    // Determine shipping mode based on selected country view
+                    let currentMode;
+                    if (selectedCountryView === 'nigeria') {
+                      currentMode = 'land';
+                    } else if (selectedCountryView === 'china') {
+                      currentMode = shippingMode;
+                    } else if (selectedCountryView === 'all') {
+                      // Mixed cart - calculate total for both countries
+                      if (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0) {
+                        return calculateTotalShippingCost();
+                      }
+                      // Single country in "all" view
+                      currentMode = cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode;
+                    }
+
+                    return calculateShippingCost(currentItems, currentMode);
+                  })()}
+                  format={{
+                    style: 'currency',
+                    currency: import.meta.env.VITE_CURRENCY || 'XAF',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  }}
+                />
+              </div>
+              <div className="text-xs text-orange-600">Pay on delivery</div>
+            </div>
+          </div>
+
+          {/* Compact Checkout Button */}
+          <button
+            onClick={() => {
+              // Store shipping info in localStorage for checkout
+              const checkoutData = {
+                shippingMode: (() => {
+                  if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) {
+                    return 'land';
+                  }
+                  return shippingMode;
+                })(),
+                selectedCountry: (() => {
+                  if (selectedCountryView === 'nigeria') return 'nigeria';
+                  if (selectedCountryView === 'china') return 'china';
+                  return cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china';
+                })(),
+                cartItems: getCheckoutItems()
+              };
+              localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+
+              if (token) {
+                navigate('/place-order');
+              } else {
+                navigate('/login', { state: { from: '/cart' } });
+              }
+            }}
+            disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')}
+            className={`w-full py-3 rounded-full font-semibold text-sm transition-all duration-300 shadow-lg ${
+              hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-brand text-white hover:bg-brand-dark shadow-brand/20 hover:shadow-xl'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              {!hasStockError && !(cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all') && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6M20 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v4.01" />
+                </svg>
+              )}
+              <span>
+                {hasStockError
+                  ? 'Fix stock issues to continue'
+                  : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
+                    ? 'Select country to continue'
+                    : 'Proceed to Checkout'
+                }
+              </span>
+            </div>
+          </button>
         </div>
       </div>
     </div>

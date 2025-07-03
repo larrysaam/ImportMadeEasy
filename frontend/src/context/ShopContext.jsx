@@ -281,17 +281,31 @@ const ShopContextProvider = (props) => {
     );
   };
 
-  // Get total price of items in cart
+  // Get total price of items in cart with bulk discount
   const getCartAmount = () => {
+    // Bulk discount configuration from environment variables
+    const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
+    const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
+
+    // Helper function to calculate discounted price for an item
+    const calculateDiscountedPrice = (originalPrice, quantity) => {
+      if (quantity >= bulkDiscountMinQuantity) {
+        const discountAmount = originalPrice * (bulkDiscountPercentage / 100);
+        return originalPrice - discountAmount;
+      }
+      return originalPrice;
+    };
+
     return Object.entries(cartItems).reduce((totalAmount, [itemId, cartKeys]) => {
       const itemInfo = products.find((product) => product._id === itemId);
       if (!itemInfo) return totalAmount;
       return (
         totalAmount +
-        Object.values(cartKeys).reduce(
-          (sum, qty) => sum + itemInfo.price * qty,
-          0
-        )
+        Object.values(cartKeys).reduce((sum, qty) => {
+          // Apply bulk discount if quantity qualifies
+          const discountedPrice = calculateDiscountedPrice(itemInfo.price, qty);
+          return sum + discountedPrice * qty;
+        }, 0)
       );
     }, 0);
   };
