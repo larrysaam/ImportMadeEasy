@@ -21,7 +21,7 @@ const Cart = () => {
   const [hasStockError, setHasStockError] = useState(false)
   const [shippingMode, setShippingMode] = useState('sea') // 'air', 'sea', 'land'
   const [cartByCountry, setCartByCountry] = useState({ nigeria: [], china: [] })
-  const [selectedCountryForCheckout, setSelectedCountryForCheckout] = useState('')
+
   const [selectedCountryView, setSelectedCountryView] = useState('all') // 'all', 'nigeria', 'china'
   
   useEffect(() => {
@@ -1038,9 +1038,9 @@ const Cart = () => {
 
 
 
-          {/* Shipping Mode Selection for Chinese Products */}
+          {/* Mobile: Shipping Mode Selection for Chinese Products */}
           {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
-            selectedCountryForCheckout === 'china') && (
+            selectedCountryView === 'china') && (
             <div className='mt-4 p-3 bg-gray-50 rounded-md'>
               <h3 className='font-semibold mb-3 text-sm text-gray-800'>Shipping Method</h3>
               <div className='space-y-2'>
@@ -1129,9 +1129,9 @@ const Cart = () => {
 
 
 
-          {/* Shipping Mode Selection for Chinese Products */}
+          {/* Desktop: Shipping Mode Selection for Chinese Products */}
           {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
-            selectedCountryForCheckout === 'china') && (
+            selectedCountryView === 'china') && (
             <div className='mt-4 p-4 bg-gray-50 rounded-md'>
               <h3 className='font-medium mb-3 text-sm text-gray-800'>Shipping Method</h3>
               <div className='space-y-2'>
@@ -1147,9 +1147,9 @@ const Cart = () => {
                   <div className='flex-1'>
                     <div className='flex justify-between items-center'>
                       <span className='text-sm font-medium'>Sea Shipping</span>
-                      <span className='text-sm text-brand font-semibold'>1,100 FCFA/kg</span>
+                      <span className='text-sm text-brand font-semibold'>1,100 FCFA/CBM</span>
                     </div>
-                    <div className='text-xs text-gray-500'>Normal delivery (15-25 days)</div>
+                    <div className='text-xs text-gray-500'>Normal delivery (2-3 months)</div>
                   </div>
                 </label>
                 <label className='flex items-center gap-2 cursor-pointer'>
@@ -1166,7 +1166,7 @@ const Cart = () => {
                       <span className='text-sm font-medium'>Air Shipping</span>
                       <span className='text-sm text-brand font-semibold'>8,500 FCFA/kg</span>
                     </div>
-                    <div className='text-xs text-gray-500'>Express delivery (5-10 days)</div>
+                    <div className='text-xs text-gray-500'>Express delivery (10-14 days)</div>
                   </div>
                 </label>
               </div>
@@ -1198,9 +1198,9 @@ const Cart = () => {
                 <p>Estimated Delivery Time:</p>
                 <p className='font-medium'>
                   {(() => {
-                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '3-5 days';
-                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '5-10 days' : '15-25 days';
-                    return shippingMode === 'air' ? '5-10 days' : '15-25 days';
+                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '4-7 days';
+                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '10-14 days' : '2-3 months';
+                    return shippingMode === 'air' ? '10-14 days' : '2-3 months';
                   })()}
                 </p>
               </div>
