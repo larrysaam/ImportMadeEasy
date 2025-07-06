@@ -530,9 +530,13 @@ const Cart = () => {
         </div>
       )}
 
-      <div className='space-y-0 sm:space-y-0'>
-        {
-          getCurrentCartItems().map((item, index) => {
+      {/* Side by side layout for cart items and cart total */}
+      <div className='flex flex-col lg:flex-row gap-8'>
+        {/* Left side: Cart items */}
+        <div className='flex-1'>
+          <div className='space-y-0 sm:space-y-0'>
+            {
+              getCurrentCartItems().map((item, index) => {
             try {
               const productData = products.find((product) => product && product._id === item.id);
               
@@ -1028,228 +1032,145 @@ const Cart = () => {
             }
           })
         }
-      </div>
-
-
-      {/* Mobile: Full width cart total */}
-      <div className='block sm:hidden mt-8 mb-6'>
-        <div className='bg-white rounded-lg shadow-sm border p-4'>
-          <CartTotal />
-
-
-
-          {/* Mobile: Shipping Mode Selection for Chinese Products */}
-          {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
-            selectedCountryView === 'china') && (
-            <div className='mt-4 p-3 bg-gray-50 rounded-md'>
-              <h3 className='font-semibold mb-3 text-sm text-gray-800'>Shipping Method</h3>
-              <div className='space-y-2'>
-                <label className='flex items-center gap-2 cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='shippingMode'
-                    value='sea'
-                    checked={shippingMode === 'sea'}
-                    onChange={(e) => setShippingMode(e.target.value)}
-                    className='text-brand'
-                  />
-                  <div className='flex-1'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium'>Sea Shipping</span>
-                      <span className='text-sm text-brand font-semibold'>1,100 FCFA/kg</span>
-                    </div>
-                    <div className='text-xs text-gray-500'>Normal delivery (15-25 days)</div>
-                  </div>
-                </label>
-                <label className='flex items-center gap-2 cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='shippingMode'
-                    value='air'
-                    checked={shippingMode === 'air'}
-                    onChange={(e) => setShippingMode(e.target.value)}
-                    className='text-brand'
-                  />
-                  <div className='flex-1'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium'>Air Shipping</span>
-                      <span className='text-sm text-brand font-semibold'>8,500 FCFA/kg</span>
-                    </div>
-                    <div className='text-xs text-gray-500'>Express delivery (5-10 days)</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
-
-          <div className='mt-4 p-3 bg-gray-50 rounded-md'>
-            <h3 className='font-semibold mb-3 text-sm text-gray-800'>Delivery Information</h3>
-            <div className='space-y-2 text-sm'>
-              <div className='flex justify-between items-center'>
-                <span className='text-gray-600'>Shipping Fee:</span>
-                <div className='text-right'>
-                  <span className='font-semibold text-gray-900'>
-                    {(() => {
-                      const currentItems = getCurrentCartItems();
-                      const currentMode = cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode;
-                      const shippingCost = calculateShippingCost(currentItems, currentMode);
-                      return `${import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} ${new Intl.NumberFormat('fr-FR').format(shippingCost)}`;
-                    })()}
-                  </span>
-                  <div className='text-xs text-orange-600 font-medium'>Pay on delivery</div>
-                </div>
-              </div>
-              <div className='flex justify-between items-center'>
-                <span className='text-gray-600'>Total Weight:</span>
-                <span className='font-semibold text-gray-900'>
-                  {calculateTotalWeight(getCurrentCartItems()).toFixed(1)} kg
-                </span>
-              </div>
-              <div className='flex justify-between items-center'>
-                <span className='text-gray-600'>Delivery Time:</span>
-                <span className='font-semibold text-gray-900'>
-                  {(() => {
-                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '3-5 days';
-                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '5-10 days' : '15-25 days';
-                    return shippingMode === 'air' ? '5-10 days' : '15-25 days';
-                  })()}
-                </span>
-              </div>
-            </div>
           </div>
-
-
         </div>
-      </div>
 
-      {/* Desktop: Right-aligned cart total */}
-      <div className='hidden sm:flex justify-end my-20'>
-        <div className='w-full sm:w-1/3 mt-8 sm:mt-0'>
-          <CartTotal />
+        {/* Right side: Cart total */}
+        <div className='w-full lg:w-96 flex-shrink-0'>
+          <div className='sticky top-8'>
+            <div className='bg-white rounded-lg shadow-sm border p-4'>
+              <CartTotal />
 
-
-
-          {/* Desktop: Shipping Mode Selection for Chinese Products */}
-          {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
-            selectedCountryView === 'china') && (
-            <div className='mt-4 p-4 bg-gray-50 rounded-md'>
-              <h3 className='font-medium mb-3 text-sm text-gray-800'>Shipping Method</h3>
-              <div className='space-y-2'>
-                <label className='flex items-center gap-2 cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='shippingModeDesktop'
-                    value='sea'
-                    checked={shippingMode === 'sea'}
-                    onChange={(e) => setShippingMode(e.target.value)}
-                    className='text-brand'
-                  />
-                  <div className='flex-1'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium'>Sea Shipping</span>
-                      <span className='text-sm text-brand font-semibold'>1,100 FCFA/CBM</span>
-                    </div>
-                    <div className='text-xs text-gray-500'>Normal delivery (2-3 months)</div>
+              {/* Shipping Mode Selection for Chinese Products */}
+              {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
+                selectedCountryView === 'china') && (
+                <div className='mt-4 p-3 bg-gray-50 rounded-md'>
+                  <h3 className='font-semibold mb-3 text-sm text-gray-800'>Shipping Method</h3>
+                  <div className='space-y-2'>
+                    <label className='flex items-center gap-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='shippingMode'
+                        value='sea'
+                        checked={shippingMode === 'sea'}
+                        onChange={(e) => setShippingMode(e.target.value)}
+                        className='text-brand'
+                      />
+                      <div className='flex-1'>
+                        <div className='flex justify-between items-center'>
+                          <span className='text-sm font-medium'>Sea Shipping</span>
+                          <span className='text-sm text-brand font-semibold'>1,100 FCFA/kg</span>
+                        </div>
+                        <div className='text-xs text-gray-500'>Normal delivery (15-25 days)</div>
+                      </div>
+                    </label>
+                    <label className='flex items-center gap-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='shippingMode'
+                        value='air'
+                        checked={shippingMode === 'air'}
+                        onChange={(e) => setShippingMode(e.target.value)}
+                        className='text-brand'
+                      />
+                      <div className='flex-1'>
+                        <div className='flex justify-between items-center'>
+                          <span className='text-sm font-medium'>Air Shipping</span>
+                          <span className='text-sm text-brand font-semibold'>8,500 FCFA/kg</span>
+                        </div>
+                        <div className='text-xs text-gray-500'>Express delivery (5-10 days)</div>
+                      </div>
+                    </label>
                   </div>
-                </label>
-                <label className='flex items-center gap-2 cursor-pointer'>
-                  <input
-                    type='radio'
-                    name='shippingModeDesktop'
-                    value='air'
-                    checked={shippingMode === 'air'}
-                    onChange={(e) => setShippingMode(e.target.value)}
-                    className='text-brand'
-                  />
-                  <div className='flex-1'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium'>Air Shipping</span>
-                      <span className='text-sm text-brand font-semibold'>8,500 FCFA/kg</span>
-                    </div>
-                    <div className='text-xs text-gray-500'>Express delivery (10-14 days)</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
+                </div>
+              )}
 
-          <div className='mt-4 p-4 bg-gray-50 rounded-md'>
-            <h3 className='font-medium mb-2 text-xs sm:text-sm'>Delivery Details</h3>
-            <div className='flex flex-col gap-2 text-xs sm:text-sm'>
-              <div className='flex justify-between'>
-                <p>Shipping Fee:</p>
-                <div className='text-right'>
-                  <p className='font-medium'>
-                    {(() => {
-                      const currentItems = getCurrentCartItems();
-                      const currentMode = cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode;
-                      const shippingCost = calculateShippingCost(currentItems, currentMode);
-                      return `${import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} ${new Intl.NumberFormat('fr-FR').format(shippingCost)}`;
-                    })()}
-                  </p>
-                  <p className='text-xs text-orange-600 font-medium'>Pay on delivery</p>
+              {/* Delivery Information */}
+              <div className='mt-4 p-3 bg-gray-50 rounded-md'>
+                <h3 className='font-semibold mb-3 text-sm text-gray-800'>Delivery Information</h3>
+                <div className='space-y-2 text-sm'>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-gray-600'>Shipping Fee:</span>
+                    <div className='text-right'>
+                      <span className='font-semibold text-gray-900'>
+                        {(() => {
+                          const currentItems = getCurrentCartItems();
+                          const currentMode = cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode;
+                          const shippingCost = calculateShippingCost(currentItems, currentMode);
+                          return `${import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} ${new Intl.NumberFormat('fr-FR').format(shippingCost)}`;
+                        })()}
+                      </span>
+                      <div className='text-xs text-orange-600 font-medium'>Pay on delivery</div>
+                    </div>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-gray-600'>Total Weight:</span>
+                    <span className='font-semibold text-gray-900'>{calculateTotalWeight(getCurrentCartItems()).toFixed(1)} kg</span>
+                  </div>
+                  <div className='flex justify-between items-center'>
+                    <span className='text-gray-600'>Estimated Delivery:</span>
+                    <span className='font-semibold text-gray-900'>
+                      {(() => {
+                        if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '3-5 days';
+                        if (selectedCountryView === 'china') return shippingMode === 'air' ? '5-10 days' : '15-25 days';
+                        return shippingMode === 'air' ? '5-10 days' : '15-25 days';
+                      })()}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className='flex justify-between'>
-                <p>Total Weight:</p>
-                <p className='font-medium'>{calculateTotalWeight(getCurrentCartItems()).toFixed(1)} kg</p>
-              </div>
-              <div className='flex justify-between'>
-                <p>Estimated Delivery Time:</p>
-                <p className='font-medium'>
-                  {(() => {
-                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) return '4-7 days';
-                    if (selectedCountryView === 'china') return shippingMode === 'air' ? '10-14 days' : '2-3 months';
-                    return shippingMode === 'air' ? '10-14 days' : '2-3 months';
-                  })()}
-                </p>
-              </div>
-            </div>
-          </div>
 
-          <div className='w-full text-end'>
-            <button
-              onClick={() => {
-                // Store shipping info in localStorage for checkout
-                const checkoutData = {
-                  shippingMode: (() => {
-                    if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) {
-                      return 'land';
+              {/* Checkout Button */}
+              <div className='w-full text-center mt-6'>
+                <button
+                  onClick={() => {
+                    // Store shipping info in localStorage for checkout
+                    const checkoutData = {
+                      shippingMode: (() => {
+                        if (selectedCountryView === 'nigeria' || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0)) {
+                          return 'land';
+                        }
+                        return shippingMode;
+                      })(),
+                      selectedCountry: (() => {
+                        if (selectedCountryView === 'nigeria') return 'nigeria';
+                        if (selectedCountryView === 'china') return 'china';
+                        return cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china';
+                      })(),
+                      cartItems: getCheckoutItems()
+                    };
+                    localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
+
+                    if (token) {
+                      navigate('/place-order');
+                    } else {
+                      navigate('/login', { state: { from: '/cart' } });
                     }
-                    return shippingMode;
-                  })(),
-                  selectedCountry: (() => {
-                    if (selectedCountryView === 'nigeria') return 'nigeria';
-                    if (selectedCountryView === 'china') return 'china';
-                    return cartByCountry.nigeria.length > 0 ? 'nigeria' : 'china';
-                  })(),
-                  cartItems: getCheckoutItems()
-                };
-                localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-
-                if (token) {
-                  navigate('/place-order');
-                } else {
-                  navigate('/login', { state: { from: '/cart' } });
-                }
-              }}
-              disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')}
-              className={`bg-brand text-white text-xs sm:text-sm my-8 px-4 py-3 transition-all duration-500
-                ${hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-brand-dark'
-                }`}
-            >
-              {hasStockError
-                ? 'Fix stock issues to continue'
-                : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
-                  ? 'Select country to continue'
-                  : 'Proceed to checkout'
-              }
-            </button>
+                  }}
+                  disabled={hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')}
+                  className={`bg-brand text-white text-sm py-3 px-6 transition-all duration-500 w-full rounded-md
+                    ${hasStockError || (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-brand-dark'
+                    }`}
+                >
+                  {hasStockError
+                    ? 'Fix stock issues to continue'
+                    : (cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && selectedCountryView === 'all')
+                      ? 'Select country to continue'
+                      : 'Proceed to checkout'
+                  }
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+
+
+
+
 
       {/* Related products section */}
       <div className="mt-8 sm:mt-20 border-t pt-6 sm:pt-10 bg-white sm:bg-transparent mx-0 sm:mx-0 px-0 sm:px-0">
