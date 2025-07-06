@@ -532,7 +532,7 @@ const Cart = () => {
 
       <div className='space-y-0 sm:space-y-0'>
         {
-          cartData.map((item, index) => {
+          getCurrentCartItems().map((item, index) => {
             try {
               const productData = products.find((product) => product && product._id === item.id);
               
