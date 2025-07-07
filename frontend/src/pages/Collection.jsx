@@ -206,13 +206,13 @@ const Collection = () => {
 
 
   return (
-    <div className='flex flex-col px-3 sm:px-4 md:px-8 md:flex-row gap-1 sm:gap-10 pt-4 sm:pt-10 border-t animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
+    <div className='flex flex-col px-0 sm:px-4 md:px-8 md:flex-row gap-0 sm:gap-10 pt-0 sm:pt-10 border-t animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
       {/* Mobile Filter Header */}
       <div className='min-w-60'>
         {/* Mobile Header - Enhanced with modern card design */}
-        <div className="md:hidden mb-4">
+        <div className="md:hidden mb-0">
           {/* Mobile Control Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-4">
+          <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 space-y-3 sm:space-y-4">
             {/* Top Row - Filters and Sort */}
             <div className="flex items-center justify-between gap-3">
               {/* FILTERS Dropdown - Enhanced */}
@@ -356,7 +356,7 @@ const Collection = () => {
         <div className={`${showFilter ? 'block' : 'hidden'} md:block space-y-4`}>
           {/* Category Filter - Enhanced Mobile */}
           <div className={`${showFilter ? 'block' : 'hidden'} md:block`}>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
+            <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-4 h-4 text-gray-600 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -383,7 +383,7 @@ const Collection = () => {
 
           {/* Country of Origin Filter - Enhanced Mobile */}
           <div className={`${showFilter ? 'block' : 'hidden'} md:block`}>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
+            <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-4 h-4 text-gray-600 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -489,7 +489,7 @@ const Collection = () => {
 
           {/* Bestseller Filter - Enhanced Mobile */}
           <div className={`${showFilter ? 'block' : 'hidden'} md:block`}>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
+            <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 md:border-gray-300 md:rounded-none md:shadow-none md:bg-transparent">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-4 h-4 text-gray-600 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -531,11 +531,11 @@ const Collection = () => {
       </div>
 
       {/* Products Section - Enhanced Mobile */}
-      <div className='flex-1 bg-white md:bg-transparent rounded-t-3xl md:rounded-none -mt-4 md:mt-0 pt-6 md:pt-0 px-4 md:px-0'>
+      <div className='flex-1 bg-white md:bg-transparent rounded-none md:rounded-none mt-0 md:mt-0 pt-2 md:pt-0 px-0 md:px-0'>
         {/* Header Section */}
-        <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-6'>
+        <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6'>
           {/* Enhanced Title for Mobile */}
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left px-3 sm:px-0">
             <Title
               text1={isPreorder ? 'PRE' : (selectedCountry ? selectedCountry.toUpperCase() : 'ALL')}
               text2={isPreorder ? 'ORDERS' : 'COLLECTIONS'}
@@ -586,7 +586,7 @@ const Collection = () => {
           <div>
            
             {/* Enhanced Product Grid */}
-            <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-4 gap-y-6 sm:gap-y-14 pb-8 md:pb-0'>
+            <div className='grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-4 gap-y-3 sm:gap-y-14 pb-4 md:pb-0 px-2 sm:px-0'>
               {filterProducts.map((item, index) => (
                 <div
                   key={item._id}

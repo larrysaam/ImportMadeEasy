@@ -35,11 +35,9 @@ const Navbar = () => {
   // Check if navbar should be visible on mobile (only homepage and collection page)
   const shouldShowOnMobile = location.pathname === '/' || location.pathname.includes('/collection')
 
-  // Enable search functionality when on collection page
+  // Reset search when leaving collection page
   useEffect(() => {
-    if (location.pathname.includes('collection')) {
-      setShowSearch(true)
-    } else {
+    if (!location.pathname.includes('collection')) {
       setShowSearch(false)
       setSearch('')
     }
