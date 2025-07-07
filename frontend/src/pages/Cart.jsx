@@ -232,7 +232,7 @@ const Cart = () => {
     }
   }, [cartData, products])
 
-  if (cartData.length == 0) {
+  if (cartData.length === 0) {
     return ( 
       <div className='px-4 sm:px-14 min-h-[50vh] flex flex-col items-center'>
         <div className='text-xl sm:text-2xl mb-3 self-start'>
@@ -241,7 +241,7 @@ const Cart = () => {
         <div className='my-auto text-sm sm:text-base lg:text-lg flex flex-col items-center'>
           <p className='text-center'>Your cart is empty! Try to add some items first.</p>
           <Link to='/collection' 
-            className='bg-black text-white text-sm sm:text-base mt-4 px-4 py-2 w-fit transistion-all duration-500 hover:bg-slate-700'>
+            className='bg-black text-white text-sm sm:text-base mt-4 px-4 py-2 w-fit transition-all duration-500 hover:bg-slate-700'>
             Go shopping!
           </Link>
         </div>
@@ -376,7 +376,7 @@ const Cart = () => {
 
       {/* Mixed Cart Message */}
       {cartByCountry.nigeria.length > 0 && cartByCountry.china.length > 0 && (
-        <div className="hidden sm:block lg:blog bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="hidden sm:block bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -532,11 +532,10 @@ const Cart = () => {
 
       {/* Side by side layout for cart items and cart total */}
       <div className='flex flex-col lg:flex-row gap-8'>
-        {/* Left side: Cart items */}
-        <div className='flex-1'>
+        {/* Left side: Cart items - Scrollable */}
+        <div className='flex-1 lg:overflow-y-auto lg:pr-4'>
           <div className='space-y-0 sm:space-y-0'>
-            {
-              getCurrentCartItems().map((item, index) => {
+            {getCurrentCartItems().map((item, index) => {
             try {
               const productData = products.find((product) => product && product._id === item.id);
               
@@ -1030,15 +1029,13 @@ const Cart = () => {
               console.error("Error rendering cart item:", error);
               return null; // Skip rendering this item if there's an error
             }
-          })
-        }
+          })}
           </div>
         </div>
 
-        {/* Right side: Cart total */}
+        {/* Right side: Cart total - Fixed */}
         <div className='w-full lg:w-96 flex-shrink-0'>
-          <div className='sticky top-8'>
-            <div className='bg-white rounded-lg shadow-sm border p-4'>
+          <div className='bg-white rounded-lg shadow-sm border p-4'>
               <CartTotal />
 
               {/* Shipping Mode Selection for Chinese Products */}
@@ -1165,12 +1162,8 @@ const Cart = () => {
             </div>
           </div>
         </div>
-      </div>
-
-
-
-
-
+        
+      
 
       {/* Related products section */}
       <div className="mt-8 sm:mt-20 border-t pt-6 sm:pt-10 bg-white sm:bg-transparent mx-0 sm:mx-0 px-0 sm:px-0">
