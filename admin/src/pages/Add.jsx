@@ -346,6 +346,7 @@ const Add = ({token}) => {
     countryOfOrigin: z.enum(['Nigeria', 'China'], {message: "Please select country of origin"}),
     deliveryMethod: z.enum(['Standard', 'Express', 'Premium'], {message: "Please select delivery method"}),
     productType: z.enum(['Express', 'Normal'], {message: "Please select product type"}),
+    weight: z.coerce.number().positive({message: "Please enter product weight in kg"}),
     colors: z.array(colorVariantSchema)
       .min(1, "At least one color variant is required"),
   })
@@ -369,6 +370,7 @@ const Add = ({token}) => {
       countryOfOrigin: "Nigeria",
       deliveryMethod: "Standard",
       productType: "Normal",
+      weight: "",
       colors: [],
     },
   })
@@ -602,6 +604,7 @@ const Add = ({token}) => {
               countryOfOrigin: productData.countryOfOrigin || "Nigeria",
               deliveryMethod: productData.deliveryMethod || "Standard",
               productType: productData.productType || "Normal",
+              weight: productData.weight || 0.1,
               colors: [], // Will be populated by append below
             });
 
@@ -855,15 +858,37 @@ const Add = ({token}) => {
         </div>
 
         <div>
-          <p className='mb-2'>Product price</p> 
+          <p className='mb-2'>Product price</p>
           <Controller
             name="price"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <>
-                <Input 
+                <Input
                   type="number"
-                  placeholder="0" 
+                  placeholder="0"
+                  className='w-full px-3 py-2 sm:w-[120px]'
+                  value={field.value || ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Product weight (kg)</p>
+          <Controller
+            name="weight"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0.1"
                   className='w-full px-3 py-2 sm:w-[120px]'
                   value={field.value || ''}
                   onChange={(e) => field.onChange(e.target.value)}

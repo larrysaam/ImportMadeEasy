@@ -183,11 +183,12 @@ const List = ({token}) => {
     <div className='flex flex-col gap-2'>
       {/* -------- List Table Title --------*/}
 
-      <div className='hidden md:grid h-12 grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr] items-center py-1 px-2 border bg-gray-100 text-sm'>
+      <div className='hidden md:grid h-12 grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr] items-center py-1 px-2 border bg-gray-100 text-sm'>
         <b>Image</b>
         <b>Name</b>
         <b>Category</b>
         <b>Price</b>
+        <b>Weight (kg)</b>
         <b>Stock</b>
         <b className='text-center'>Action</b>
       </div>
@@ -196,18 +197,19 @@ const List = ({token}) => {
 
       {
         currentItems.map((item, index) => (
-          <div 
+          <div
             className={`
-              grid grid-cols-[1fr_2fr_1fr] md:grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr]
+              grid grid-cols-[1fr_2fr_1fr] md:grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr]
               items-center gap-2 py-2 px-2 border text-sm
               ${getTotalQuantity(item) < 10 ? 'bg-red-50' : ''}
-            `} 
+            `}
             key={index}
           >
             <img alt={item.name} src={item.image[0]} className='w-auto h-12 object-cover rounded-md'/>
             <p>{item.name}</p>
             <p>{item.category}</p>
             <p>{currency} {item.price?.toLocaleString('fr-CM')}</p>
+            <p>{item.weight || 'N/A'} kg</p>
             <p className={`${getTotalQuantity(item) < 10 ? 'text-red-500 font-medium' : ''}`}>
               {getTotalQuantity(item)}
             </p>

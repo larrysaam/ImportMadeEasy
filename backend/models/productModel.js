@@ -101,6 +101,12 @@ const productSchema = new Schema({
       enum: ['Express', 'Normal'],
       default: 'Normal'
     },
+    weight: {
+      type: Number,
+      required: true,
+      min: 0.01,
+      default: 0.1
+    },
     reviews: [{
       userId: {
         type: mongoose.Schema.Types.ObjectId,

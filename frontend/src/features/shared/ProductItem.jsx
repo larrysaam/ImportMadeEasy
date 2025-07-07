@@ -19,7 +19,7 @@ const ProductItem = ({id, image, name, price, preorder}) => {
                     </div>
                 )}
                 {console.log('preorder ', preorder)}
-            </div> 
+            </div>
             <p className='pt-2 sm:pt-3 pb-1 text-sm sm:text-base lg:text-lg leading-snug'>{name}</p>
             <p className='text-sm sm:text-base lg:text-lg font-medium text-brand'>{currency} {price?.toLocaleString('fr-CM')}</p>
         </Link>

@@ -421,6 +421,11 @@ const Product = () => {
               </div>
             </div>
             <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {productData?.price?.toLocaleString('fr-CM')}</p>
+            {productData?.weight && (
+              <p className='mt-2 text-gray-600 text-sm sm:text-base'>
+                <span className='font-medium'>Weight:</span> {productData.weight} kg
+              </p>
+            )}
             <p className='mt-3 sm:mt-5 text-gray-500 text-sm sm:text-base'>{productData?.description}</p>
             
             {/* Color Selection */}

@@ -58,7 +58,8 @@ const addProduct = async (req, res) => {
       keywords,
       countryOfOrigin,
       deliveryMethod,
-      productType
+      productType,
+      weight
     } = req.body;
 
     // Convert string boolean values to actual booleans
@@ -132,6 +133,7 @@ const addProduct = async (req, res) => {
       countryOfOrigin: countryOfOrigin || 'Nigeria',
       deliveryMethod: deliveryMethod || 'Standard',
       productType: productType || 'Normal',
+      weight: parseFloat(weight) || 0.1,
       date: new Date()
     });
 
@@ -372,6 +374,11 @@ const updateProduct = async (req, res) => {
       } else if (Array.isArray(updates.keywords)) {
         updates.keywords = updates.keywords.filter(k => k && k.trim().length > 0);
       }
+    }
+
+    // Handle weight field
+    if (updates.weight !== undefined) {
+      updates.weight = parseFloat(updates.weight) || 0.1;
     }
 
     // Ensure subcategory and subsubcategory have default values if not provided
