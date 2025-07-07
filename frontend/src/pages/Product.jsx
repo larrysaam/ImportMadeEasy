@@ -7,7 +7,7 @@ import NotFound from '@/components/NotFound';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import ReviewSection from '@/components/ReviewSection'
@@ -15,16 +15,21 @@ import PhotoUpload from '@/components/UserPhotos/PhotoUpload';
 import ShareButton from '@/components/ShareButton';
 import MetaTags from '@/components/MetaTags';
 import { ShoppingCart, Heart } from 'lucide-react';
+import cartAddSound from '@/assets/cart-add-sound.wav';
 
 const Product = () => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // Create sound object for cart notifications
+  const notificationSound = new Audio(cartAddSound);
   const { productId } = useParams();
-  const { products, currency, addToCart, token, navigate, isLoading, getCartCount } = useContext(ShopContext)
+  const { products, currency, addToCart, updateQuantity, token, navigate, isLoading, getCartCount, refetch } = useContext(ShopContext)
   const [productData, setProductData] = useState(null)
   const [activeImage, setActiveImage] = useState('')
   const [selectedColor, setSelectedColor] = useState(null)
   const [selectedSize, setSelectedSize] = useState('')
+  const [quantity, setQuantity] = useState(1)
   const [hasPreordered, setHasPreordered] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [address, setAddress] = useState({
@@ -183,10 +188,15 @@ const Product = () => {
       // Reset size for products with real sizes
       setSelectedSize('');
     }
+
+    // Reset quantity when color changes
+    setQuantity(1);
   };
 
   const handleSizeSelect = (size) => {
     setSelectedSize(size);
+    // Reset quantity when size changes
+    setQuantity(1);
   };
 
   const handlePreorder = async () => {
@@ -258,7 +268,32 @@ const Product = () => {
     }
   }
 
-  const handleAddToCart = () => {
+  // Quantity control functions
+  const increaseQuantity = () => {
+    if (quantity < availableQuantity) {
+      setQuantity(prev => prev + 1)
+    }
+  }
+
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(prev => prev - 1)
+    }
+  }
+
+  const handleQuantityChange = (e) => {
+    const value = parseInt(e.target.value) || 1
+    if (value >= 1 && value <= availableQuantity) {
+      setQuantity(value)
+    } else if (value > availableQuantity) {
+      setQuantity(availableQuantity)
+      toast.warning(`Maximum quantity available is ${availableQuantity}`)
+    } else if (value < 1) {
+      setQuantity(1)
+    }
+  }
+
+  const handleAddToCart = async () => {
     if (!token) {
       navigate('/login')
       return
@@ -278,12 +313,51 @@ const Product = () => {
     // Use 'N/A' for products without sizes, otherwise use selected size
     const sizeToAdd = hasRealSizes ? selectedSize : 'N/A';
 
-    // Pass color hex code to cart
-    addToCart(productData?._id, sizeToAdd, selectedColor?.colorHex);
+    try {
+      // Create success message components
+      const sizeText = hasRealSizes ? `, ${selectedSize}` : '';
+      const quantityText = quantity > 1 ? ` (${quantity} items)` : '';
 
-    // Create appropriate success message
-    const sizeText = hasRealSizes ? `, ${selectedSize}` : '';
-    toast.success(`${productData?.name} (${selectedColor?.colorName}${sizeText}) added to cart!`);
+      // If quantity is 1, use the regular addToCart function
+      if (quantity === 1) {
+        addToCart(productData?._id, sizeToAdd, selectedColor?.colorHex);
+        // Note: Single item toast is handled by ShopContext addToCart function
+      } else {
+        // For quantities > 1, use the update cart API directly
+        const response = await axios.post(
+          `${backendUrl}/api/cart/update`,
+          {
+            itemId: productData?._id,
+            size: sizeToAdd,
+            quantity: quantity,
+            color: selectedColor?.colorHex
+          },
+          { headers: { token } }
+        );
+
+        if (response.data.success) {
+          // Update local cart state
+          const cartKey = selectedColor?.colorHex ? `${sizeToAdd}-${selectedColor.colorHex}` : sizeToAdd;
+          updateQuantity(productData?._id, cartKey, quantity);
+
+          // Refresh cart data to ensure consistency
+          refetch();
+
+          // Play cart notification sound
+          notificationSound.play().catch(error => console.error("Error playing sound:", error));
+
+          // Show success toast with quantity information
+          toast.success(`${productData?.name} (${selectedColor?.colorName}${sizeText})${quantityText} added to cart!`);
+
+          console.log(`Toast shown: ${productData?.name} (${selectedColor?.colorName}${sizeText})${quantityText} added to cart!`);
+        } else {
+          toast.error(response.data.message || 'Failed to add to cart');
+        }
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error(error.response?.data?.message || 'Failed to add to cart');
+    }
   }
 
   if (isLoading) {
@@ -526,20 +600,65 @@ const Product = () => {
               </div>
             )}
 
-            {/* Delivery Information */}
-            <div className='my-6 sm:my-8 p-4 bg-gray-50 rounded-md'>
-              <h3 className='font-medium mb-2'>Delivery Information</h3>
-              <div className='flex flex-col gap-2 text-sm'>
-                <div className='flex justify-between'>
-                  <p>Shipping Fee:</p>
-                  <p className='font-medium'>{currency}900</p>
-                </div>
-                <div className='flex justify-between'>
-                  <p>Estimated Delivery Time:</p>
-                  <p className='font-medium'>9 days</p>
+
+            {/* Quantity Controls */}
+            {selectedColor && (!hasRealSizes || selectedSize) && availableQuantity > 0 && (
+              <div className='my-6 sm:my-8'>
+                <p className='mb-3 font-medium'>Quantity:</p>
+                <div className='flex items-center gap-3 flex-wrap'>
+                  <div className='flex items-center gap-2'>
+                    <button
+                      onClick={decreaseQuantity}
+                      disabled={quantity <= 1}
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                        quantity <= 1
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-600 hover:border-brand hover:text-brand active:scale-95'
+                      }`}
+                      title="Decrease quantity"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+
+                    <input
+                      type="number"
+                      min="1"
+                      max={availableQuantity}
+                      value={quantity}
+                      onChange={handleQuantityChange}
+                      className='w-16 h-10 text-center border-2 border-gray-300 rounded-md focus:border-brand focus:outline-none text-sm font-medium'
+                    />
+
+                    <button
+                      onClick={increaseQuantity}
+                      disabled={quantity >= availableQuantity}
+                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
+                        quantity >= availableQuantity
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-600 hover:border-brand hover:text-brand active:scale-95'
+                      }`}
+                      title="Increase quantity"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <span className='text-sm text-gray-500'>
+                    {availableQuantity} available
+                  </span>
+
+                  {quantity > 1 && (
+                    <span className='text-sm text-brand font-medium'>
+                      Total: {currency} {(productData?.price * quantity)?.toLocaleString('fr-CM')}
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className='w-full sm:w-auto fixed bottom-0 left-0 sm:relative p-4 sm:p-0 bg-white border-t sm:border-0 z-10 shadow-lg sm:shadow-none'>
@@ -596,6 +715,20 @@ const Product = () => {
                   </button>
                 </div>
               )}
+            </div>
+             {/* Delivery Information */}
+            <div className='my-6 sm:my-8 p-4 bg-gray-50 rounded-md'>
+              <h3 className='font-medium mb-2'>Delivery Information</h3>
+              <div className='flex flex-col gap-2 text-sm'>
+                <div className='flex justify-between'>
+                  <p>Shipping Fee:</p>
+                  <p className='font-medium'>{currency}900</p>
+                </div>
+                <div className='flex justify-between'>
+                  <p>Estimated Delivery Time:</p>
+                  <p className='font-medium'>9 days</p>
+                </div>
+              </div>
             </div>
 
              {/* ----------- Review Section ----------- */}
