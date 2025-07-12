@@ -125,7 +125,7 @@ const Placeorder = () => {
         return {
           productId: item.id,
           name: product.name,
-          price: product.price,
+          price: getSizeSpecificPrice(product, item.size, item.colorHex),
           weight: product.weight || 1, // Add weight for shipping calculation
           // Add a check to handle missing images
           image: product.images && product.images.length > 0 ? product.images[0] : null,

@@ -28,6 +28,7 @@ const processMobilePayment = async (req, res) => {
       paymentDetails: { phoneNumber, service, amount }
     } = req.body
 
+
     console.log('Processing MeSomb payment:', {
       userId,
       phoneNumber,
