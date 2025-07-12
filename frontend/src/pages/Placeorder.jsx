@@ -34,6 +34,16 @@ const Placeorder = () => {
     resolver: zodResolver(orderSchema)
   })
 
+  // Helper function to get size-specific price for phone products
+  const getSizeSpecificPrice = (product, size, colorHex) => {
+    if (product?.sizeType === 'phone' && colorHex && product.colors) {
+      const colorData = product.colors.find(c => c?.colorHex === colorHex);
+      const sizeData = colorData?.sizes?.find(s => s?.size === size);
+      return sizeData?.price || product.price;
+    }
+    return product?.price || 0;
+  };
+
   // Load saved delivery information
   const loadSavedDeliveryInfo = async () => {
     if (!token) return
@@ -134,7 +144,7 @@ const Placeorder = () => {
         const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
         const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
 
-        let itemPrice = product.price;
+        let itemPrice = getSizeSpecificPrice(product, item.size, item.colorHex);
         if (item.quantity >= bulkDiscountMinQuantity) {
           const discountAmount = itemPrice * (bulkDiscountPercentage / 100);
           itemPrice = itemPrice - discountAmount;
@@ -417,7 +427,8 @@ const Placeorder = () => {
                 const discountedTotal = selectedCountryItems.reduce((total, item) => {
                   const product = products.find(p => p._id === item.id)
                   if (product) {
-                    let itemPrice = product.price;
+                    // Get size-specific price for phone products
+                    let itemPrice = getSizeSpecificPrice(product, item.size, item.colorHex);
                     if (item.quantity >= bulkDiscountMinQuantity) {
                       const discountAmount = itemPrice * (bulkDiscountPercentage / 100);
                       itemPrice = itemPrice - discountAmount;

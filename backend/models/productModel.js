@@ -14,14 +14,19 @@ const userPhotoSchema = new Schema({
 
 // Define size schema without _id
 const sizeSchema = new Schema({
-  size: { 
-    type: String, 
-    required: true 
+  size: {
+    type: String,
+    required: true
   },
-  quantity: { 
-    type: Number, 
-    required: true, 
-    default: 0 
+  quantity: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  price: {
+    type: Number,
+    required: false, // Optional - only used for phone products
+    default: null
   }
 }, { _id: false });
 

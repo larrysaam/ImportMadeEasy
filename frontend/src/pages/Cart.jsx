@@ -89,6 +89,16 @@ const Cart = () => {
     }, 0);
   };
 
+  // Helper function to get size-specific price for phone products
+  const getSizeSpecificPrice = (product, size, colorHex) => {
+    if (product?.sizeType === 'phone' && colorHex && product.colors) {
+      const colorData = product.colors.find(c => c?.colorHex === colorHex);
+      const sizeData = colorData?.sizes?.find(s => s?.size === size);
+      return sizeData?.price || product.price;
+    }
+    return product?.price || 0;
+  };
+
   
   const flagImages = {
     Nigeria: "https://flagcdn.com/w320/ng.png",
@@ -612,6 +622,13 @@ const Cart = () => {
                             <div className="flex items-center gap-1">
                               <span className="text-xs">Size:</span>
                               <span className="font-medium text-xs">{item.size}</span>
+                              {productData?.sizeType === 'phone' && (
+                                <span className="text-xs text-brand font-medium">
+                                  ({new Intl.NumberFormat('fr-FR', {
+                                    minimumFractionDigits: 0
+                                  }).format(getSizeSpecificPrice(productData, item.size, item.colorHex))} FCFA)
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -643,7 +660,7 @@ const Cart = () => {
                               <span className='text-xs text-gray-600'>Total:</span>
                               <span className='text-sm font-bold text-brand'>
                                 <NumberFlow
-                                  value={calculateItemTotal(productData.price, item.quantity)}
+                                  value={calculateItemTotal(getSizeSpecificPrice(productData, item.size, item.colorHex), item.quantity)}
                                   format={{
                                     style: 'currency',
                                     currency: import.meta.env.VITE_CURRENCY || 'XAF',
@@ -661,7 +678,7 @@ const Cart = () => {
                               <span className='text-xs text-gray-400 line-through'>
                                 {new Intl.NumberFormat('fr-FR', {
                                   minimumFractionDigits: 0
-                                }).format(productData.price * item.quantity)} FCFA
+                                }).format(getSizeSpecificPrice(productData, item.size, item.colorHex) * item.quantity)} FCFA
                               </span>
                             </div>
                             {/* Price Breakdown */}
@@ -669,7 +686,7 @@ const Cart = () => {
                               <span className='text-xs text-gray-500'>
                                 {new Intl.NumberFormat('fr-FR', {
                                   minimumFractionDigits: 0
-                                }).format(calculateDiscountedPrice(productData.price, item.quantity))} FCFA × {item.quantity}
+                                }).format(calculateDiscountedPrice(getSizeSpecificPrice(productData, item.size, item.colorHex), item.quantity))} FCFA × {item.quantity}
                               </span>
                             </div>
                           </>
@@ -680,7 +697,7 @@ const Cart = () => {
                               <span className='text-xs text-gray-600'>Total:</span>
                               <span className='text-sm font-bold text-brand'>
                                 <NumberFlow
-                                  value={productData.price * item.quantity}
+                                  value={getSizeSpecificPrice(productData, item.size, item.colorHex) * item.quantity}
                                   format={{
                                     style: 'currency',
                                     currency: import.meta.env.VITE_CURRENCY || 'XAF',
@@ -694,7 +711,7 @@ const Cart = () => {
                               <span className='text-xs text-gray-500'>
                                 {new Intl.NumberFormat('fr-FR', {
                                   minimumFractionDigits: 0
-                                }).format(productData.price)} FCFA × {item.quantity}
+                                }).format(getSizeSpecificPrice(productData, item.size, item.colorHex))} FCFA × {item.quantity}
                               </span>
                               {/* Show how many more items needed for discount */}
                               {item.quantity < bulkDiscountMinQuantity && (
@@ -967,7 +984,7 @@ const Cart = () => {
                         {/* Discounted Price */}
                         <NumberFlow
                           className='text-brand font-semibold'
-                          value={calculateItemTotal(productData.price, item.quantity)}
+                          value={calculateItemTotal(getSizeSpecificPrice(productData, item.size, item.colorHex), item.quantity)}
                           format={{
                             style: 'currency',
                             currency: import.meta.env.VITE_CURRENCY || 'XAF',
@@ -979,7 +996,7 @@ const Cart = () => {
                         <div className="text-xs text-gray-400 line-through">
                           {new Intl.NumberFormat('fr-FR', {
                             minimumFractionDigits: 0
-                          }).format(productData.price * item.quantity)} FCFA
+                          }).format(getSizeSpecificPrice(productData, item.size, item.colorHex) * item.quantity)} FCFA
                         </div>
                         {/* Discount Badge */}
                         <div className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-full">
@@ -991,7 +1008,7 @@ const Cart = () => {
                         {/* Regular Price */}
                         <NumberFlow
                           className='text-brand font-semibold'
-                          value={productData.price * item.quantity}
+                          value={getSizeSpecificPrice(productData, item.size, item.colorHex) * item.quantity}
                           format={{
                             style: 'currency',
                             currency: import.meta.env.VITE_CURRENCY || 'XAF',
@@ -1221,8 +1238,8 @@ const Cart = () => {
                     return currentItems.reduce((total, item) => {
                       const product = products.find(p => p._id === item.id);
                       if (product) {
-                        // Use discounted price calculation
-                        return total + calculateItemTotal(product.price, item.quantity);
+                        // Use discounted price calculation with size-specific pricing
+                        return total + calculateItemTotal(getSizeSpecificPrice(product, item.size, item.colorHex), item.quantity);
                       }
                       return total;
                     }, 0);
@@ -1249,8 +1266,9 @@ const Cart = () => {
                 const totalSavings = currentItems.reduce((savings, item) => {
                   const product = products.find(p => p._id === item.id);
                   if (product && qualifiesForBulkDiscount(item.quantity)) {
-                    const originalTotal = product.price * item.quantity;
-                    const discountedTotal = calculateItemTotal(product.price, item.quantity);
+                    const sizeSpecificPrice = getSizeSpecificPrice(product, item.size, item.colorHex);
+                    const originalTotal = sizeSpecificPrice * item.quantity;
+                    const discountedTotal = calculateItemTotal(sizeSpecificPrice, item.quantity);
                     return savings + (originalTotal - discountedTotal);
                   }
                   return savings;

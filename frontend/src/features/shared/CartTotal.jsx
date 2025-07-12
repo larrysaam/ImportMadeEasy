@@ -11,15 +11,28 @@ const { deliveryFee, getCartAmount, cartItems, products } = useContext(ShopConte
 const bulkDiscountPercentage = Number(import.meta.env.VITE_BULK_DISCOUNT_PERCENTAGE) || 5;
 const bulkDiscountMinQuantity = Number(import.meta.env.VITE_BULK_DISCOUNT_MIN_QUANTITY) || 10;
 
+// Helper function to get size-specific price for phone products
+const getSizeSpecificPrice = (product, size, colorHex) => {
+  if (product?.sizeType === 'phone' && colorHex && product.colors) {
+    const colorData = product.colors.find(c => c?.colorHex === colorHex);
+    const sizeData = colorData?.sizes?.find(s => s?.size === size);
+    return sizeData?.price || product.price;
+  }
+  return product?.price || 0;
+};
+
 // Calculate total savings from bulk discounts
 const calculateTotalSavings = () => {
   return Object.entries(cartItems).reduce((totalSavings, [itemId, cartKeys]) => {
     const itemInfo = products.find((product) => product._id === itemId);
     if (!itemInfo) return totalSavings;
 
-    return totalSavings + Object.values(cartKeys).reduce((savings, qty) => {
+    return totalSavings + Object.entries(cartKeys).reduce((savings, [cartKey, qty]) => {
       if (qty >= bulkDiscountMinQuantity) {
-        const discountAmount = itemInfo.price * qty * (bulkDiscountPercentage / 100);
+        // Parse cartKey to get size and color
+        const [size, colorHex] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, undefined];
+        const sizeSpecificPrice = getSizeSpecificPrice(itemInfo, size, colorHex);
+        const discountAmount = sizeSpecificPrice * qty * (bulkDiscountPercentage / 100);
         return savings + discountAmount;
       }
       return savings;
@@ -34,8 +47,13 @@ const getOriginalCartAmount = () => {
     if (!itemInfo) return totalAmount;
     return (
       totalAmount +
-      Object.values(cartKeys).reduce(
-        (sum, qty) => sum + itemInfo.price * qty,
+      Object.entries(cartKeys).reduce(
+        (sum, [cartKey, qty]) => {
+          // Parse cartKey to get size and color
+          const [size, colorHex] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, undefined];
+          const sizeSpecificPrice = getSizeSpecificPrice(itemInfo, size, colorHex);
+          return sum + sizeSpecificPrice * qty;
+        },
         0
       )
     );

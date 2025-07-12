@@ -27,6 +27,7 @@ const PHONE_SIZES = ['16GB', '32GB', '64GB', '128GB', '256GB', '512GB', '1TB']
 // Move ColorVariant component outside to prevent re-renders
 const ColorVariant = React.memo(({ index, control, remove, watch, getSizeOptions }) => {
   const hasSizes = watch('hasSizes')
+  const sizeType = watch('sizeType')
 
   return (
     <div className="border rounded-lg p-4 mb-4 bg-gray-50">
@@ -130,20 +131,39 @@ const ColorVariant = React.memo(({ index, control, remove, watch, getSizeOptions
                         />
                       </div>
                       {field.value?.some(s => s.size === size) && (
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="Qty"
-                          className="w-full"
-                          value={field.value.find(s => s.size === size)?.quantity || 0}
-                          onChange={(e) => {
-                            const quantity = parseInt(e.target.value) || 0
-                            const newSizes = field.value.map(s =>
-                              s.size === size ? { ...s, quantity } : s
-                            )
-                            field.onChange(newSizes)
-                          }}
-                        />
+                        <div className="space-y-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="Qty"
+                            className="w-full"
+                            value={field.value.find(s => s.size === size)?.quantity || 0}
+                            onChange={(e) => {
+                              const quantity = parseInt(e.target.value) || 0
+                              const newSizes = field.value.map(s =>
+                                s.size === size ? { ...s, quantity } : s
+                              )
+                              field.onChange(newSizes)
+                            }}
+                          />
+                          {sizeType === 'phone' && (
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="Price"
+                              className="w-full"
+                              value={field.value.find(s => s.size === size)?.price || ''}
+                              onChange={(e) => {
+                                const price = parseFloat(e.target.value) || null
+                                const newSizes = field.value.map(s =>
+                                  s.size === size ? { ...s, price } : s
+                                )
+                                field.onChange(newSizes)
+                              }}
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -322,7 +342,8 @@ const Add = ({token}) => {
     // Make sizes optional - can be empty array for products without sizes
     sizes: z.array(z.object({
       size: z.string().min(1, "Size is required"),
-      quantity: z.number().min(0, "Quantity cannot be negative")
+      quantity: z.number().min(0, "Quantity cannot be negative"),
+      price: z.number().min(0, "Price cannot be negative").optional().nullable()
     })).optional().default([]),
     // Add direct quantity field for products without sizes
     quantity: z.number().min(0, "Quantity cannot be negative").optional().default(0)
@@ -618,7 +639,7 @@ const Add = ({token}) => {
                 colorName: color.colorName,
                 colorHex: color.colorHex,
                 colorImages: color.colorImages || [], // Pass URLs
-                sizes: hasRealSizes ? color.sizes?.map(s => ({ size: s.size, quantity: s.quantity })) || [] : [],
+                sizes: hasRealSizes ? color.sizes?.map(s => ({ size: s.size, quantity: s.quantity, price: s.price || null })) || [] : [],
                 quantity: hasRealSizes ? 0 : (color.sizes?.[0]?.quantity || 0) // Extract quantity from 'N/A' size if no real sizes
               });
             });

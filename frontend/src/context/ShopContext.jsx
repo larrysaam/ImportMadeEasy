@@ -281,6 +281,16 @@ const ShopContextProvider = (props) => {
     );
   };
 
+  // Helper function to get size-specific price for phone products
+  const getSizeSpecificPrice = (product, size, colorHex) => {
+    if (product?.sizeType === 'phone' && colorHex && product.colors) {
+      const colorData = product.colors.find(c => c?.colorHex === colorHex);
+      const sizeData = colorData?.sizes?.find(s => s?.size === size);
+      return sizeData?.price || product.price;
+    }
+    return product?.price || 0;
+  };
+
   // Get total price of items in cart with bulk discount
   const getCartAmount = () => {
     // Bulk discount configuration from environment variables
@@ -301,9 +311,12 @@ const ShopContextProvider = (props) => {
       if (!itemInfo) return totalAmount;
       return (
         totalAmount +
-        Object.values(cartKeys).reduce((sum, qty) => {
+        Object.entries(cartKeys).reduce((sum, [cartKey, qty]) => {
+          // Parse cartKey to get size and color
+          const [size, colorHex] = cartKey.includes('-') ? cartKey.split('-') : [cartKey, undefined];
+          const sizeSpecificPrice = getSizeSpecificPrice(itemInfo, size, colorHex);
           // Apply bulk discount if quantity qualifies
-          const discountedPrice = calculateDiscountedPrice(itemInfo.price, qty);
+          const discountedPrice = calculateDiscountedPrice(sizeSpecificPrice, qty);
           return sum + discountedPrice * qty;
         }, 0)
       );

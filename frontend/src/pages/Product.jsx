@@ -293,6 +293,15 @@ const Product = () => {
     }
   }
 
+  // Get current price based on selected size (for phone products)
+  const getCurrentPrice = () => {
+    if (productData?.sizeType === 'phone' && selectedColor && selectedSize) {
+      const sizeData = selectedColor.sizes?.find(s => s.size === selectedSize)
+      return sizeData?.price || productData?.price
+    }
+    return productData?.price
+  }
+
   const handleAddToCart = async () => {
     if (!token) {
       navigate('/login')
@@ -494,7 +503,12 @@ const Product = () => {
                 </div>
               </div>
             </div>
-            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {productData?.price?.toLocaleString('fr-CM')}</p>
+            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {getCurrentPrice()?.toLocaleString('fr-CM')}</p>
+            {productData?.sizeType === 'phone' && !selectedSize && (
+              <p className='mt-1 text-sm text-gray-500'>
+                * Price varies by storage capacity
+              </p>
+            )}
             {productData?.weight && (
               <p className='mt-2 text-gray-600 text-sm sm:text-base'>
                 <span className='font-medium'>Weight:</span> {productData.weight} kg
@@ -560,7 +574,11 @@ const Product = () => {
                         key={sizeObj.size}
                         value={sizeObj.size}
                         disabled={sizeObj.quantity === 0}
-                        className={`text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-3 transition-all duration-200 border rounded-md
+                        className={`text-sm sm:text-base transition-all duration-200 border rounded-md
+                          ${productData?.sizeType === 'phone'
+                            ? 'px-3 py-3 sm:px-4 sm:py-4'
+                            : 'px-3 py-2 sm:px-4 sm:py-3'
+                          }
                           ${sizeObj.quantity === 0
                             ? 'opacity-50 cursor-not-allowed bg-gray-100 text-gray-400'
                             : selectedSize === sizeObj.size
@@ -571,8 +589,9 @@ const Product = () => {
                       >
                         <div className="flex flex-col items-center">
                           <span>{sizeObj.size}</span>
+                          
                           {sizeObj.quantity === 0 && (
-                            <span className="text-xs">Out of Stock</span>
+                            <span className="text-xs text-red-500 mt-1">Out of Stock</span>
                           )}
                         </div>
                       </ToggleGroupItem>
@@ -647,13 +666,10 @@ const Product = () => {
                     </button>
                   </div>
 
-                  <span className='text-sm text-gray-500'>
-                    {availableQuantity} available
-                  </span>
-
+                  
                   {quantity > 1 && (
                     <span className='text-sm text-brand font-medium'>
-                      Total: {currency} {(productData?.price * quantity)?.toLocaleString('fr-CM')}
+                      Total: {currency} {(getCurrentPrice() * quantity)?.toLocaleString('fr-CM')}
                     </span>
                   )}
                 </div>
