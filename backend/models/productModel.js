@@ -79,7 +79,7 @@ const productSchema = new Schema({
     },
     sizeType: {
       type: String,
-      enum: ['clothing', 'shoes'],
+      enum: ['clothing', 'shoes', 'phone'],
       default: 'clothing'
     },
     keywords: {

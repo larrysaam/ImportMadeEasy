@@ -22,6 +22,7 @@ import { is } from 'date-fns/locale'
 const CLOTHING_SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
 const SHOE_SIZES = Array.from({ length: 23 }, (_, i) => (i + 26).toString())
 const KIDS_SHOE_SIZES = Array.from({ length: 13 }, (_, i) => (i + 26).toString())
+const PHONE_SIZES = ['16GB', '32GB', '64GB', '128GB', '256GB', '512GB', '1TB']
 
 // Move ColorVariant component outside to prevent re-renders
 const ColorVariant = React.memo(({ index, control, remove, watch, getSizeOptions }) => {
@@ -674,6 +675,9 @@ const Add = ({token}) => {
     if (sizeType === 'shoes') {
       return category === 'Kids' ? KIDS_SHOE_SIZES : SHOE_SIZES
     }
+    if (sizeType === 'phone') {
+      return PHONE_SIZES
+    }
     return CLOTHING_SIZES
   }, [watch('category'), watch('sizeType')])
 
@@ -1070,6 +1074,14 @@ const Add = ({token}) => {
                     }`}
                   >
                     Shoe Sizes
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="phone"
+                    className={`px-4 py-2 border rounded-md ${
+                      field.value === 'phone' ? 'bg-black text-white' : ''
+                    }`}
+                  >
+                    Phone Storage
                   </ToggleGroupItem>
                 </ToggleGroup>
               )}
