@@ -34,6 +34,7 @@ const Collection = () => {
     // Initialize from localStorage or default to empty string
     return localStorage.getItem('selectedCountry') || ''
   }) // Country filter
+  const [selectedHorizontalCategory, setSelectedHorizontalCategory] = useState('All') // For mobile horizontal category list
   const isPreorder = searchParams.get('preorder') === 'true'
 
   // Custom function to update country and persist to localStorage
@@ -55,6 +56,16 @@ const Collection = () => {
   // Toggle category filter
   const toggleCategory = (value) => {
     setSelectedCategory(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value])
+  }
+
+  // Handle horizontal category selection for mobile
+  const handleHorizontalCategorySelect = (category) => {
+    setSelectedHorizontalCategory(category)
+    if (category === 'All') {
+      setSelectedCategory([])
+    } else {
+      setSelectedCategory([category])
+    }
   }
 
   // Toggle subcategory filter
@@ -191,6 +202,17 @@ const Collection = () => {
     }
   }, [isPreorder])
 
+  // Sync horizontal category selection with regular category filter
+  useEffect(() => {
+    if (selectedCategory.length === 0) {
+      setSelectedHorizontalCategory('All')
+    } else if (selectedCategory.length === 1) {
+      setSelectedHorizontalCategory(selectedCategory[0])
+    } else {
+      setSelectedHorizontalCategory('All') // Multiple categories selected, show All
+    }
+  }, [selectedCategory])
+
   // Update preorder checkbox handler
   const handlePreorderChange = (checked) => {
     setPreorderOnly(checked)
@@ -209,52 +231,28 @@ const Collection = () => {
     <div className='flex flex-col px-0 sm:px-4 md:px-8 md:flex-row gap-0 sm:gap-10 pt-0 sm:pt-10 border-t animate-fade animate-duration-500 bg-gray-50 sm:bg-white min-h-screen'>
       {/* Mobile Filter Header */}
       <div className='min-w-60'>
-        {/* Mobile Header - Enhanced with modern card design */}
+        {/* Mobile Header - Horizontal Category List */}
         <div className="md:hidden mb-0">
-          {/* Mobile Control Card */}
-          <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 space-y-3 sm:space-y-4">
-            {/* Top Row - Filters and Sort */}
-            <div className="flex items-center justify-between gap-3">
-              {/* FILTERS Dropdown - Enhanced */}
-              <button
-                onClick={() => setShowFilter(!showFilter)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
-                  showFilter
-                    ? 'bg-brand text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
-                </svg>
-                FILTERS
-                <svg
-                  className={`w-3 h-3 transition-transform duration-300 ${showFilter ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {/* Mobile Category Scroll */}
+          <div className="bg-white rounded-none sm:rounded-xl shadow-none sm:shadow-sm border-0 sm:border border-gray-100 p-3 sm:p-4 space-y-3">
+            {/* Horizontal Scrollable Category List */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+              {['All', ...Array.from(new Set(products.map(product => product.category)))].map((category) => (
+                <button
+                  key={category}
+                  onClick={() => handleHorizontalCategorySelect(category)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                    selectedHorizontalCategory === category
+                      ? 'bg-brand text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Sort Dropdown - Enhanced */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 font-medium">Sort:</span>
-                <Select defaultValue='relevant' onValueChange={setSortType}>
-                  <SelectTrigger className="w-[110px] h-9 text-xs border border-gray-200 rounded-lg bg-white hover:border-gray-300 transition-colors">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-lg border-gray-200">
-                    <SelectItem value="relevant" className="text-xs rounded-md">Relevant</SelectItem>
-                    <SelectItem value="low-high" className="text-xs rounded-md">Low-High</SelectItem>
-                    <SelectItem value="high-low" className="text-xs rounded-md">High-Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  {category}
+                </button>
+              ))}
             </div>
 
-            {/* Country Filter Section - Enhanced */}
+            {/* Country Filter Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,87 +261,54 @@ const Collection = () => {
                 <span className="text-sm font-medium text-gray-700">Country Filter</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* All Countries Button - Enhanced */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
+                {/* All Countries Button */}
                 <button
                   onClick={() => updateSelectedCountry('')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
+                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                     selectedCountry === ''
-                      ? 'bg-brand text-white shadow-md ring-2 ring-brand/20'
+                      ? 'bg-brand text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                   title="All Countries"
                 >
                   <span className="text-sm">🌍</span>
-                  <span className="hidden sm:inline">All</span>
+                  <span>All</span>
                 </button>
 
-                {/* Nigeria Flag Button - Enhanced */}
+                {/* Nigeria Flag Button */}
                 <button
                   onClick={() => updateSelectedCountry('Nigeria')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
+                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                     selectedCountry === 'Nigeria'
-                      ? 'bg-green-50 text-green-800 ring-2 ring-green-500 shadow-md'
+                      ? 'bg-brand text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                   title="Nigeria"
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm">
+                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white shadow-sm">
                     <img src={flagImages.Nigeria} alt="Nigeria Flag" className="w-full h-full object-cover"/>
                   </div>
-                  <span className="hidden sm:inline">NG</span>
+                  <span>Nigeria</span>
                 </button>
 
-                {/* China Flag Button - Enhanced */}
+                {/* China Flag Button */}
                 <button
                   onClick={() => updateSelectedCountry('China')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
+                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                     selectedCountry === 'China'
-                      ? 'bg-red-50 text-red-800 ring-2 ring-red-500 shadow-md'
+                      ? 'bg-brand text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                   title="China"
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden border border-white shadow-sm">
+                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white shadow-sm">
                     <img src={flagImages.China} alt="China Flag" className="w-full h-full object-cover"/>
                   </div>
-                  <span className="hidden sm:inline">CN</span>
+                  <span>China</span>
                 </button>
               </div>
             </div>
-
-            {/* Active Filters Display */}
-            {(selectedCountry || bestsellerOnly) && (
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                <span className="text-xs text-gray-600 font-medium">Active:</span>
-                {selectedCountry && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                    {selectedCountry}
-                    <button
-                      onClick={() => updateSelectedCountry('')}
-                      className="hover:bg-blue-200 rounded-full p-0.5"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                )}
-                {bestsellerOnly && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                    Bestsellers
-                    <button
-                      onClick={() => setBestsellerOnly(false)}
-                      className="hover:bg-yellow-200 rounded-full p-0.5"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
 

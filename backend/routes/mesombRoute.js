@@ -2,7 +2,8 @@ import express from 'express'
 import {
   processMobilePayment,
   verifyPayment,
-  getSupportedServices
+  getSupportedServices,
+  testMeSombConnection
 } from '../controllers/mesombController.js'
 import authUser from '../middleware/auth.js'
 
@@ -16,5 +17,8 @@ mesombRouter.get('/payment/verify/:transactionId', authUser, verifyPayment)
 
 // Get supported mobile services (public)
 mesombRouter.get('/services', getSupportedServices)
+
+// Test MeSomb connection (public)
+mesombRouter.get('/test', testMeSombConnection)
 
 export default mesombRouter
