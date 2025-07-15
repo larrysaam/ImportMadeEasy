@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from '@/pages/Home';
 import Collection from '@/pages/Collection';
@@ -33,6 +33,29 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import PWADebugger from '@/components/PWADebugger';
 
+// Mobile redirect component
+const MobileHomeRedirect = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // If mobile, redirect to collection page
+  if (isMobile) {
+    return <Navigate to="/collection" replace />;
+  }
+
+  // If desktop, show home page
+  return <Home />;
+};
+
 const App = () => {
   const { pathname } = useLocation();
 
@@ -50,7 +73,8 @@ const App = () => {
         <Navbar />
         <SearchBar />
           <Routes>
-            <Route path='/' element={<Home/>} />
+            <Route path='/' element={<MobileHomeRedirect/>} />
+            <Route path='/home' element={<Home/>} />
             <Route path='/collection' element={<Collection/>} />
             <Route path='/about' element={<About/>} />
             <Route path='/contact' element={<Contact/>} />
