@@ -503,7 +503,14 @@ const Product = () => {
                 </div>
               </div>
             </div>
-            <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {getCurrentPrice()?.toLocaleString('fr-CM')}</p>
+            <div className="flex items-end gap-3">
+              <p className='mt-3 sm:mt-5 font-medium text-2xl sm:text-3xl text-brand'>{currency} {getCurrentPrice()?.toLocaleString('fr-CM')}</p>
+              {productData?.strikethroughPrice && (
+                <p className='text-gray-400 line-through text-xl'>
+                  {currency} {productData.strikethroughPrice.toLocaleString('fr-CM')}
+                </p>
+              )}
+            </div>
             {productData?.sizeType === 'phone' && !selectedSize && (
               <p className='mt-1 text-sm text-gray-500'>
                 * Price varies by storage capacity

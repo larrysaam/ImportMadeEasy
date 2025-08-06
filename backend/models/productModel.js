@@ -49,6 +49,7 @@ const productSchema = new Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
     price: { type: Number, required: true },
+    strikethroughPrice: { type: Number },
     image: { type: Array, required: true }, // Keep main product images
     category: { type: String, required: true },
     subcategory: { type: String, default: '' }, // Make optional with default empty string

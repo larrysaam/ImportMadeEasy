@@ -19,7 +19,7 @@ const Cart = () => {
   const [ cartData, setCartData ] = useState([])
   const [inventoryErrors, setInventoryErrors] = useState({})
   const [hasStockError, setHasStockError] = useState(false)
-  const [shippingMode, setShippingMode] = useState('sea') // 'air', 'sea', 'land'
+  const [shippingMode, setShippingMode] = useState('air') // 'air', 'land'
   const [cartByCountry, setCartByCountry] = useState({ nigeria: [], china: [] })
 
   const [selectedCountryView, setSelectedCountryView] = useState('all') // 'all', 'nigeria', 'china'
@@ -73,9 +73,9 @@ const Cart = () => {
 
       // Auto-set shipping mode based on cart contents
       if (nigeriaItems.length > 0 && chinaItems.length === 0) {
-        setShippingMode('land'); // Only Nigerian products
+        setShippingMode('air'); // Only Nigerian products
       } else if (chinaItems.length > 0) {
-        setShippingMode('sea'); // Default for Chinese products
+        setShippingMode('air'); // Default for Chinese products
       }
     }
 
@@ -83,7 +83,8 @@ const Cart = () => {
 
   // Helper function to calculate total weight of cart items
   const calculateTotalWeight = (items) => {
-    return items.reduce((total, item) => {
+    const itemsWithShipping = items.filter(item => item.product?.category?.toLowerCase() !== 'phone');
+    return itemsWithShipping.reduce((total, item) => {
       const weight = item.product?.weight || 1; // Default 1kg if no weight specified
       return total + (weight * item.quantity);
     }, 0);
@@ -106,32 +107,29 @@ const Cart = () => {
   }
 
 
-  // Helper function to calculate shipping cost
   const calculateShippingCost = (items, mode) => {
-    const totalWeight = calculateTotalWeight(items);
+    const itemsWithShipping = items.filter(item => item.product?.category?.toLowerCase() !== 'phone');
+    let totalWeight = calculateTotalWeight(itemsWithShipping);
+
+    if (totalWeight < 1) {
+      totalWeight = 0.5;
+    }
+    
+    const country = items.length > 0 && items[0].product ? items[0].product.countryOfOrigin?.toLowerCase() : '';
+    
     const rates = {
-      air: 8500,    // 8500 FCFA per kg
-      sea: 1100,    // 1100 FCFA per kg
-      land: 1000    // 1000 FCFA per kg
+      air: country === 'nigeria' ? 1000 : 8500,
+      land: 1000
     };
-    return totalWeight * (rates[mode] || rates.sea);
+    
+    return totalWeight * (rates[mode] || (country === 'nigeria' ? rates.land : rates.air));
   };
 
   // Calculate total shipping cost for mixed cart (both countries)
   const calculateTotalShippingCost = () => {
-    let totalCost = 0;
-
-    // Calculate Nigeria shipping (always land)
-    if (cartByCountry.nigeria.length > 0) {
-      totalCost += calculateShippingCost(cartByCountry.nigeria, 'land');
-    }
-
-    // Calculate China shipping (air or sea based on selection)
-    if (cartByCountry.china.length > 0) {
-      totalCost += calculateShippingCost(cartByCountry.china, shippingMode);
-    }
-
-    return totalCost;
+    const nigeriaShippingCost = calculateShippingCost(cartByCountry.nigeria, shippingMode);
+    const chinaShippingCost = calculateShippingCost(cartByCountry.china, shippingMode);
+    return nigeriaShippingCost + chinaShippingCost;
   };
 
   // Bulk discount configuration from environment variables
@@ -1053,7 +1051,9 @@ const Cart = () => {
         {/* Right side: Cart total - Fixed */}
         <div className='w-full lg:w-96 flex-shrink-0'>
           <div className='bg-white rounded-lg shadow-sm border p-4'>
-              <CartTotal />
+              <div className='hidden sm:block'>
+                <CartTotal />
+              </div>
 
               {/* Shipping Mode Selection for Chinese Products */}
               {((cartByCountry.china.length > 0 && cartByCountry.nigeria.length === 0) ||
@@ -1061,23 +1061,7 @@ const Cart = () => {
                 <div className='mt-4 p-3 bg-gray-50 rounded-md'>
                   <h3 className='font-semibold mb-3 text-sm text-gray-800'>Shipping Method</h3>
                   <div className='space-y-2'>
-                    <label className='flex items-center gap-2 cursor-pointer'>
-                      <input
-                        type='radio'
-                        name='shippingMode'
-                        value='sea'
-                        checked={shippingMode === 'sea'}
-                        onChange={(e) => setShippingMode(e.target.value)}
-                        className='text-brand'
-                      />
-                      <div className='flex-1'>
-                        <div className='flex justify-between items-center'>
-                          <span className='text-sm font-medium'>Sea Shipping</span>
-                          <span className='text-sm text-brand font-semibold'>1,100 FCFA/kg</span>
-                        </div>
-                        <div className='text-xs text-gray-500'>Normal delivery (15-25 days)</div>
-                      </div>
-                    </label>
+                    
                     <label className='flex items-center gap-2 cursor-pointer'>
                       <input
                         type='radio'
@@ -1090,7 +1074,7 @@ const Cart = () => {
                       <div className='flex-1'>
                         <div className='flex justify-between items-center'>
                           <span className='text-sm font-medium'>Air Shipping</span>
-                          <span className='text-sm text-brand font-semibold'>8,500 FCFA/kg</span>
+                          <span className='text-sm text-brand font-semibold'>{selectedCountryView === 'nigeria' ? '1,000' : '8,500'} FCFA/kg</span>
                         </div>
                         <div className='text-xs text-gray-500'>Express delivery (5-10 days)</div>
                       </div>
@@ -1109,6 +1093,10 @@ const Cart = () => {
                       <span className='font-semibold text-gray-900'>
                         {(() => {
                           const currentItems = getCurrentCartItems();
+                          const nonPhoneItems = currentItems.filter(item => item.product?.category?.toLowerCase() !== 'phone');
+                          if (nonPhoneItems.length === 0) {
+                            return <span className='font-semibold text-green-600'>FREE</span>;
+                          }
                           const currentMode = cartByCountry.nigeria.length > 0 && cartByCountry.china.length === 0 ? 'land' : shippingMode;
                           const shippingCost = calculateShippingCost(currentItems, currentMode);
                           return `${import.meta.env.VITE_CURRENCY_SYMBOL || 'FCFA'} ${new Intl.NumberFormat('fr-FR').format(shippingCost)}`;
@@ -1118,7 +1106,7 @@ const Cart = () => {
                     </div>
                   </div>
                   <div className='flex justify-between items-center'>
-                    <span className='text-gray-600'>Total Weight:</span>
+                    <span className='text-gray-600'>Total Weight (excl. phones):</span>
                     <span className='font-semibold text-gray-900'>{calculateTotalWeight(getCurrentCartItems()).toFixed(1)} kg</span>
                   </div>
                   <div className='flex justify-between items-center'>
@@ -1311,17 +1299,7 @@ const Cart = () => {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-blue-800">Delivery:</span>
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="shippingModeMobile"
-                          value="sea"
-                          checked={shippingMode === 'sea'}
-                          onChange={(e) => setShippingMode(e.target.value)}
-                          className="text-blue-600 w-3 h-3"
-                        />
-                        <span className="text-xs text-blue-800">Sea (1,100/kg)</span>
-                      </label>
+                      
                       <label className="flex items-center gap-1 cursor-pointer">
                         <input
                           type="radio"
@@ -1331,7 +1309,7 @@ const Cart = () => {
                           onChange={(e) => setShippingMode(e.target.value)}
                           className="text-blue-600 w-3 h-3"
                         />
-                        <span className="text-xs text-blue-800">Air (8,500/kg)</span>
+                        <span className="text-xs text-blue-800">Air ({selectedCountryView === 'nigeria' ? '1,000' : '8,500'}/kg)</span>
                       </label>
                     </div>
                   </div>
@@ -1344,17 +1322,7 @@ const Cart = () => {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-blue-800">China Delivery:</span>
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="shippingModeMobile"
-                          value="sea"
-                          checked={shippingMode === 'sea'}
-                          onChange={(e) => setShippingMode(e.target.value)}
-                          className="text-blue-600 w-3 h-3"
-                        />
-                        <span className="text-xs text-blue-800">Sea (1,100/kg)</span>
-                      </label>
+                      
                       <label className="flex items-center gap-1 cursor-pointer">
                         <input
                           type="radio"
@@ -1364,7 +1332,7 @@ const Cart = () => {
                           onChange={(e) => setShippingMode(e.target.value)}
                           className="text-blue-600 w-3 h-3"
                         />
-                        <span className="text-xs text-blue-800">Air (8,500/kg)</span>
+                        <span className="text-xs text-blue-800">Air ({selectedCountryView === 'nigeria' ? '1,000' : '8,500'}/kg)</span>
                       </label>
                     </div>
                   </div>

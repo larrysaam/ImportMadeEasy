@@ -114,21 +114,7 @@ const getOriginalCartAmount = () => {
                 />
             </div>
             <hr/>
-            <div className='flex justify-between'>
-                <p>Shipping fee</p>
-                <div className='flex flex-col items-end'>
-                    <NumberFlow
-                        value={deliveryFee ? deliveryFee : 0}
-                        format={{
-                            style: 'currency',
-                            currency: import.meta.env.VITE_CURRENCY || 'XAF',
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0
-                        }}
-                    />
-                    <p className='text-xs text-orange-600 font-medium'>Pay on delivery</p>
-                </div>
-            </div>
+            
             <div className='text-xs text-gray-500 flex justify-end'>
                 <p>Estimated delivery: 9 days</p>
             </div>

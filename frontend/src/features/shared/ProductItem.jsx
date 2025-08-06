@@ -2,7 +2,7 @@ import React, { useContext } from 'react'
 import { ShopContext } from '@/context/ShopContext'
 import { Link } from 'react-router-dom'
 
-const ProductItem = ({id, image, name, price, preorder}) => {
+const ProductItem = ({id, image, name, price, strikethrough_price, preorder}) => {
     const { currency } = useContext(ShopContext)
 
     return (
@@ -21,7 +21,14 @@ const ProductItem = ({id, image, name, price, preorder}) => {
                 {console.log('preorder ', preorder)}
             </div>
             <p className='pt-2 sm:pt-3 pb-1 text-sm sm:text-base lg:text-lg leading-snug'>{name}</p>
-            <p className='text-sm sm:text-base lg:text-lg font-medium text-brand'>{currency} {price?.toLocaleString('fr-CM')}</p>
+                        <div>
+                <p className='text-sm sm:text-base lg:text-lg font-medium text-brand'>{currency} {price?.toLocaleString('fr-CM')}</p>
+                {strikethrough_price && (
+                    <p className='text-xs sm:text-xs lg:text-sm font-light text-gray-500 line-through'>
+                        {currency} {strikethrough_price?.toLocaleString('fr-CM')}
+                    </p>
+                )}
+            </div>
         </Link>
     )
 }

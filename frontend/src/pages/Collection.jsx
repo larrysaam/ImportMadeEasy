@@ -562,6 +562,7 @@ const Collection = () => {
                     id={item._id}
                     name={item.name}
                     price={item.price}
+                    strikethrough_price={item.strikethroughPrice}
                     image={item.image}
                   />
                 </div>

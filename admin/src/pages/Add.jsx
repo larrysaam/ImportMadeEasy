@@ -356,6 +356,7 @@ const Add = ({token}) => {
     name: z.string().min(2, {message: "Enter product name"}),
     description: z.string().min(2, {message: "Description is required"}),
     price: z.coerce.number().positive({message : "Please enter product price"}),
+    strikethroughPrice: z.coerce.number().positive({message : "Please enter product strikethrough price"}).optional(),
     category: z.string().min(1, {message: "Category is required"}),
     subcategory: z.string().optional(), // Made optional
     subsubcategory: z.string().optional(), // Made optional
@@ -380,6 +381,7 @@ const Add = ({token}) => {
       name: "",
       description: "",
       price: "",
+      strikethroughPrice: "",
       category: "",
       subcategory: "",
       subsubcategory: "",
@@ -522,6 +524,7 @@ const Add = ({token}) => {
                 name: "",
                 description: "",
                 price: "",
+                strikethroughPrice: "",
                 category: "",
                 subcategory: "",
                 subsubcategory: "",
@@ -614,6 +617,7 @@ const Add = ({token}) => {
               name: productData.name,
               description: productData.description,
               price: productData.price,
+              strikethroughPrice: productData.strikethroughPrice,
               category: productData.category,
               subcategory: productData.subcategory || "", // Convert null to empty string for form
               subsubcategory: productData.subsubcategory || "", // Convert null to empty string for form
@@ -886,6 +890,26 @@ const Add = ({token}) => {
           <p className='mb-2'>Product price</p>
           <Controller
             name="price"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  className='w-full px-3 py-2 sm:w-[120px]'
+                  value={field.value || ''}
+                  onChange={(e) => field.onChange(e.target.value)}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error.message}</p>}
+              </>
+            )}
+          />
+        </div>
+
+        <div>
+          <p className='mb-2'>Strikethrough Price</p>
+          <Controller
+            name="strikethroughPrice"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <>
