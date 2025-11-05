@@ -30,26 +30,19 @@ const Collection = () => {
   const [bestsellerOnly, setBestsellerOnly] = useState(false) // Bestseller filter
   const [availableSubcategories, setAvailableSubcategories] = useState([])
   const [preorderOnly, setPreorderOnly] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState(() => {
-    // Initialize from localStorage or default to empty string
-    return localStorage.getItem('selectedCountry') || ''
-  }) // Country filter
+  const [selectedCountry, setSelectedCountry] = useState('China') // Country filter - default to China
   const [selectedHorizontalCategory, setSelectedHorizontalCategory] = useState('All') // For mobile horizontal category list
   const isPreorder = searchParams.get('preorder') === 'true'
 
   // Custom function to update country and persist to localStorage
   const updateSelectedCountry = (country) => {
     setSelectedCountry(country)
-    if (country) {
-      localStorage.setItem('selectedCountry', country)
-    } else {
-      localStorage.removeItem('selectedCountry')
-    }
+    // Always store China as the only option
+    localStorage.setItem('selectedCountry', 'China')
   }
 
 
   const flagImages = {
-    Nigeria: "https://flagcdn.com/w320/ng.png",
     China: "https://flagcdn.com/w320/cn.png"
   }
 
@@ -262,36 +255,6 @@ const Collection = () => {
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-                {/* All Countries Button */}
-                <button
-                  onClick={() => updateSelectedCountry('')}
-                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
-                    selectedCountry === ''
-                      ? 'bg-brand text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  title="All Countries"
-                >
-                  <span className="text-sm">🌍</span>
-                  <span>All</span>
-                </button>
-
-                {/* Nigeria Flag Button */}
-                <button
-                  onClick={() => updateSelectedCountry('Nigeria')}
-                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
-                    selectedCountry === 'Nigeria'
-                      ? 'bg-brand text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                  title="Nigeria"
-                >
-                  <div className="w-4 h-4 rounded-full overflow-hidden border border-white shadow-sm">
-                    <img src={flagImages.Nigeria} alt="Nigeria Flag" className="w-full h-full object-cover"/>
-                  </div>
-                  <span>Nigeria</span>
-                </button>
-
                 {/* China Flag Button */}
                 <button
                   onClick={() => updateSelectedCountry('China')}
@@ -356,50 +319,6 @@ const Collection = () => {
                 <p className='text-sm font-semibold tracking-wide text-gray-800 md:text-xs md:font-medium'>COUNTRY OF ORIGIN</p>
               </div>
               <div className='flex flex-col gap-2 text-sm font-light text-gray-700'>
-                {/* All Countries Option - Enhanced */}
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all duration-300 md:p-2 md:rounded-md ${
-                    selectedCountry === ''
-                      ? 'bg-gradient-to-r from-brand/10 to-brand/5 border-2 border-brand/30 shadow-sm'
-                      : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                  onClick={() => updateSelectedCountry('')}
-                >
-                  <div className="w-8 h-8 md:w-6 md:h-6 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-sm shadow-sm">
-                    🌍
-                  </div>
-                  <span className={`font-medium ${selectedCountry === '' ? 'text-brand' : 'text-gray-700'}`}>
-                    All Countries
-                  </span>
-                  {selectedCountry === '' && (
-                    <svg className="w-4 h-4 text-brand ml-auto md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-
-                {/* Nigeria Option - Enhanced */}
-                <div
-                  className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all duration-300 md:p-2 md:rounded-md ${
-                    selectedCountry === 'Nigeria'
-                      ? 'bg-gradient-to-r from-green-50 to-green-25 border-2 border-green-300 shadow-sm'
-                      : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                  onClick={() => updateSelectedCountry('Nigeria')}
-                >
-                  <div className="w-8 h-8 md:w-6 md:h-6 rounded-full overflow-hidden border-2 border-white shadow-md">
-                    <img src={flagImages.Nigeria} alt="Nigeria Flag" className="w-full h-full object-cover"/>
-                  </div>
-                  <span className={`font-medium ${selectedCountry === 'Nigeria' ? 'text-green-800' : 'text-gray-700'}`}>
-                    Nigeria
-                  </span>
-                  {selectedCountry === 'Nigeria' && (
-                    <svg className="w-4 h-4 text-green-600 ml-auto md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-
                 {/* China Option - Enhanced */}
                 <div
                   className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all duration-300 md:p-2 md:rounded-md ${
@@ -502,7 +421,7 @@ const Collection = () => {
           {/* Enhanced Title for Mobile */}
           <div className="text-center md:text-left px-3 sm:px-0">
             <Title
-              text1={isPreorder ? 'PRE' : (selectedCountry ? selectedCountry.toUpperCase() : 'ALL')}
+              text1={isPreorder ? 'PRE' : 'CHINA'}
               text2={isPreorder ? 'ORDERS' : 'COLLECTIONS'}
             />
             {/* Mobile subtitle */}
@@ -511,8 +430,8 @@ const Collection = () => {
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
                   <div className="w-4 h-4 rounded-full overflow-hidden">
                     <img
-                      src={selectedCountry === 'Nigeria' ? flagImages.Nigeria : flagImages.China}
-                      alt={`${selectedCountry} Flag`}
+                      src={flagImages.China}
+                      alt="China Flag"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -586,7 +505,7 @@ const Collection = () => {
                     setSelectedCategory([])
                     setSelectedSubCategory([])
                     setBestsellerOnly(false)
-                    updateSelectedCountry('')
+                    setSelectedCountry('China')
                   }}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:bg-brand/90 transition-colors"
                 >

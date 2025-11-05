@@ -45,6 +45,8 @@ const Product = () => {
   })
   const [addressDialogOpen, setAddressDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [touchStart, setTouchStart] = useState(null)
+  const [touchEnd, setTouchEnd] = useState(null)
 
   const foundProduct = products.find((item) => item._id == productId);
 
@@ -131,6 +133,48 @@ const Product = () => {
     // Otherwise fall back to the main product images
     return productData?.image || [];
   }, [selectedColor, productData]);
+
+  // Get current image index
+  const currentImageIndex = useMemo(() => {
+    return currentImages.findIndex(img => img === activeImage);
+  }, [currentImages, activeImage]);
+
+  // Handle swipe gestures
+  const handleTouchStart = (e) => {
+    setTouchEnd(null); // otherwise the swipe is fired even with usual touch events
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && currentImageIndex < currentImages.length - 1) {
+      // Swipe left - next image
+      setActiveImage(currentImages[currentImageIndex + 1]);
+    }
+    
+    if (isRightSwipe && currentImageIndex > 0) {
+      // Swipe right - previous image
+      setActiveImage(currentImages[currentImageIndex - 1]);
+    }
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e) => {
+    if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
+      setActiveImage(currentImages[currentImageIndex - 1]);
+    } else if (e.key === 'ArrowRight' && currentImageIndex < currentImages.length - 1) {
+      setActiveImage(currentImages[currentImageIndex + 1]);
+    }
+  };
 
   // Add/remove class to body for product page styling
   useEffect(() => {
@@ -378,7 +422,7 @@ const Product = () => {
   }
 
   return (
-    <div className='border-t-2 pt-6 sm:pt-10 pb-20 sm:pb-6 animate-fade animate-duration-500 mx-2 sm:mx-4 md:mx-8 lg:mx-16 xl:mx-24'>
+    <div className='border-t-2 pt-0 sm:pt-10 pb-20 sm:pb-6 animate-fade animate-duration-500 mx-2 sm:mx-4 md:mx-8 lg:mx-16 xl:mx-24'>
       {/* Meta Tags for Social Sharing */}
       <MetaTags
         product={productData}
@@ -423,12 +467,81 @@ const Product = () => {
             </div>
 
             {/* Main image */}
-            <div className='w-full sm:w-[85%] h-[300px] sm:h-[500px]'>
-              <img 
-                src={activeImage} 
-                className='w-full h-full object-cover rounded-md' 
-                alt={`${productData?.name} - ${selectedColor?.colorName || 'main'}`}
-              />
+            <div className='w-full sm:w-[85%] h-[400px] sm:h-[600px] lg:h-[700px] relative'>
+              <div
+                className='w-full h-full relative overflow-hidden rounded-md bg-white cursor-pointer select-none'
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onKeyDown={handleKeyDown}
+                tabIndex={0}
+              >
+                <img 
+                  src={activeImage} 
+                  className='w-full h-full object-contain transition-all duration-300' 
+                  alt={`${productData?.name} - ${selectedColor?.colorName || 'main'}`}
+                  draggable={false}
+                />
+                
+                {/* Navigation arrows - show only if there are multiple images */}
+                {currentImages.length > 1 && (
+                  <>
+                    {/* Previous button */}
+                    <button
+                      onClick={() => currentImageIndex > 0 && setActiveImage(currentImages[currentImageIndex - 1])}
+                      disabled={currentImageIndex === 0}
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-white ${
+                        currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'
+                      }`}
+                      aria-label="Previous image"
+                    >
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Next button */}
+                    <button
+                      onClick={() => currentImageIndex < currentImages.length - 1 && setActiveImage(currentImages[currentImageIndex + 1])}
+                      disabled={currentImageIndex === currentImages.length - 1}
+                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg flex items-center justify-center transition-all duration-200 hover:bg-white ${
+                        currentImageIndex === currentImages.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'
+                      }`}
+                      aria-label="Next image"
+                    >
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+
+                    {/* Image indicator dots */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                      {currentImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setActiveImage(currentImages[index])}
+                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                            index === currentImageIndex 
+                              ? 'bg-white shadow-lg' 
+                              : 'bg-white/50 hover:bg-white/70'
+                          }`}
+                          aria-label={`View image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Swipe hint for mobile - only show on first visit */}
+                {currentImages.length > 1 && (
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 sm:hidden">
+                    <div className="bg-black/50 text-white text-xs px-3 py-1 rounded-full animate-pulse">
+                      Swipe to see more
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               {/* Add a small indicator showing this is a color-specific image */}
               {selectedColor && selectedColor.colorImages && selectedColor.colorImages.includes(activeImage) && (
                 <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
